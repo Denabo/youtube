@@ -1,26 +1,43 @@
 """
-Конфигурация проекта для пакетной обработки YouTube Shorts
+Конфигурация проекта для пакетной обработки YouTube Shorts / Reels / Clips
 """
 import os
+from pathlib import Path
 
 # === БАЗОВЫЕ ПУТИ ===
-BASE_DIR = r"C:\Users\hhdjd\PycharmProject\youtue"
+BASE_DIR = Path(__file__).resolve().parent
 
 # Входные папки
-INPUT_CLIPS_DIR = os.path.join(BASE_DIR, "input", "clips")
-INPUT_MUSIC_DIR = os.path.join(BASE_DIR, "input", "music")
-INPUT_BACKGROUNDS_DIR = os.path.join(BASE_DIR, "input", "backgrounds")
-INPUT_BANNERS_DIR = os.path.join(BASE_DIR, "input", "banners")
+INPUT_CLIPS_DIR = str(BASE_DIR / "input" / "clips")
+INPUT_MUSIC_DIR = str(BASE_DIR / "input" / "music")
+INPUT_BACKGROUNDS_DIR = str(BASE_DIR / "input" / "backgrounds")
+INPUT_BANNERS_DIR = str(BASE_DIR / "input" / "banners")
 
 # Выходные папки
-OUTPUT_DIR = os.path.join(BASE_DIR, "output")
-PROCESSED_CLIPS_DIR = os.path.join(BASE_DIR, "processed")
-TEMP_DIR = os.path.join(BASE_DIR, "temp")
+OUTPUT_DIR = str(BASE_DIR / "output")
+PROCESSED_CLIPS_DIR = str(BASE_DIR / "processed")
+TEMP_DIR = str(BASE_DIR / "temp")
 
 # Создаём все необходимые папки
-for directory in [INPUT_CLIPS_DIR, INPUT_MUSIC_DIR, INPUT_BACKGROUNDS_DIR,
-                  INPUT_BANNERS_DIR, OUTPUT_DIR, PROCESSED_CLIPS_DIR, TEMP_DIR]:
+for directory in [
+    INPUT_CLIPS_DIR,
+    INPUT_MUSIC_DIR,
+    INPUT_BACKGROUNDS_DIR,
+    INPUT_BANNERS_DIR,
+    OUTPUT_DIR,
+    PROCESSED_CLIPS_DIR,
+    TEMP_DIR,
+]:
     os.makedirs(directory, exist_ok=True)
+
+# === ПЛАТФОРМЫ ===
+PLATFORM_PROFILES = {
+    "youtube": {"name": "YouTube Shorts", "width": 1080, "height": 1920, "fps": 30},
+    "tiktok": {"name": "TikTok", "width": 1080, "height": 1920, "fps": 30},
+    "instagram": {"name": "Instagram Reels", "width": 1080, "height": 1920, "fps": 30},
+    "vk": {"name": "VK Клипы", "width": 1080, "height": 1920, "fps": 30},
+}
+DEFAULT_PLATFORMS = ["youtube", "tiktok", "instagram", "vk"]
 
 # === ПАРАМЕТРЫ ВИДЕО ===
 SHORTS_WIDTH = 1080
@@ -55,57 +72,39 @@ WHISPER_LANGUAGE = "ru"
 PROCESSING_MODES = {
     "1": {
         "name": "Обрезка + Баннер без фона",
-        "type": "crop_banner",      # ← Тип режима
+        "type": "crop_banner",
         "crop": True,
         "banner": True,
-        "background": None,
-        "resize_clip": False
+        "background": False,
+        "resize_clip": False,
     },
     "2": {
-        "name": "Майнкрафт фон + Уменьшенный клип",
-        "type": "background_clip",  # ← Тип режима
+        "name": "Фон + Уменьшенный клип + Баннер",
+        "type": "background_clip",
         "crop": False,
         "banner": True,
-        "background": "minecraft",
-        "resize_clip": True
+        "background": True,
+        "resize_clip": True,
     },
     "3": {
-        "name": "Круговая обрезка (TikTok)",
-        "type": "circle_crop",      # ← Новый тип
+        "name": "Только обрезка 9:16",
+        "type": "crop_only",
         "crop": True,
         "banner": False,
-        "background": None,
+        "background": False,
         "resize_clip": False,
-        "circle_mask": True
     },
     "4": {
-        "name": "Двойной экран (Реакция)",
-        "type": "split_screen",     # ← Новый тип
-        "crop": False,
-        "banner": False,
-        "background": "blur",
-        "resize_clip": True,
-        "split_position": "top"
-    },
-    "5": {
-        "name": "Фон + Баннер + Клип (Всё вместе)",
-        "type": "full_package",     # ← Новый тип
+        "name": "Универсальный (редактируется в config.py)",
+        "type": "universal",
         "crop": False,
         "banner": True,
-        "background": "minecraft",
-        "resize_clip": True
+        "background": True,
+        "resize_clip": True,
     },
-    "6": {
-        "name": "🔧 УНИВЕРСАЛЬНЫЙ (настраиваемый)",
-        "type": "universal",        # ← УНИВЕРСАЛЬНЫЙ РЕЖИМ
-        "crop": False,              # ← Меняй здесь!
-        "banner": True,             # ← Меняй здесь!
-        "background": True,         # ← Меняй здесь!
-        "resize_clip": True         # ← Меняй здесь!
-    }
 }
 
 # === РЕНДЕР ===
-RENDER_PRESET = "medium"  # ultrafast, fast, medium, slow
+RENDER_PRESET = "medium"
 RENDER_BITRATE = "8000k"
 RENDER_THREADS = 4
