@@ -24,9 +24,12 @@ def generate_subtitles(video_path):
     Returns:
         list of tuples: [(start_time, end_time, text), ...]
     """
+    temp_audio = "temp_audio_whisper.wav"
     try:
         video = VideoFileClip(video_path)
-        temp_audio = "temp_audio_whisper.wav"
+        if video.audio is None:
+            video.close()
+            return []
 
         # Извлекаем аудио
         video.audio.write_audiofile(
@@ -62,7 +65,7 @@ def generate_subtitles(video_path):
 
         return subtitles
 
-    except Exception as e:
+    except Exception:
         if os.path.exists(temp_audio):
             os.remove(temp_audio)
         raise
@@ -80,6 +83,9 @@ def add_stylish_subtitles(video, subtitles):
         CompositeVideoClip с субтитрами
     """
     subtitle_clips = []
+
+    if not subtitles:
+        return video
 
     try:
         font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
