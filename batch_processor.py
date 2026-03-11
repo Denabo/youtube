@@ -3,11 +3,14 @@
 """
 import os
 import shutil
+import cv2
 from pathlib import Path
 
-from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, CompositeAudioClip
+from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, CompositeAudioClip, ImageClip
 
 from config import (
+    BANNER_TOP_MARGIN,
+    BANNER_WIDTH_RATIO,
     CLIP_VERTICAL_POSITION,
     DEFAULT_MUSIC_VOLUME,
     DEFAULT_PLATFORMS,
@@ -104,6 +107,28 @@ class VideoProcessor:
                 print(f"   ⚠️  {label}: не удалось открыть {candidate.name} ({err})")
         return None, None
 
+
+
+    def _load_banner_clip(self, banner_path, duration):
+        """Пытается загрузить баннер как видео; при ошибке использует первый кадр как статичный баннер."""
+        try:
+            banner = VideoFileClip(str(banner_path)).without_audio()
+            if banner.duration < duration:
+                return banner.loop(duration=duration)
+            return banner.subclip(0, duration)
+        except Exception as err:
+            print(f"   ⚠️  Баннер-видео не открылся ({err}), пробуем первый кадр...")
+
+        capture = cv2.VideoCapture(str(banner_path))
+        ok, frame = capture.read()
+        capture.release()
+        if not ok or frame is None:
+            print("   ⚠️  Не удалось прочитать первый кадр баннера")
+            return None
+
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        return ImageClip(frame).set_duration(duration)
+
     def _mode_universal(self, clip):
         """Универсальная сборка: фон/обрезка/уменьшение/баннер"""
         print(f"   🎬 Режим: {self.mode['name']}")
@@ -149,14 +174,13 @@ class VideoProcessor:
         if self.mode.get("banner"):
             banner_files = list(Path(INPUT_BANNERS_DIR).glob("*.mp4"))
             if banner_files:
-                banner, banner_path = self._open_first_valid_clip(banner_files, "Баннер")
+                banner_path = banner_files[0]
+                print(f"   🎨 Баннер: {banner_path.name}")
+                banner = self._load_banner_clip(banner_path, clip.duration)
                 if banner is not None:
-                    print(f"   🎨 Баннер: {banner_path.name}")
                     banner = chroma_key(banner)
-                    if banner.duration < clip.duration:
-                        banner = banner.loop(duration=clip.duration)
-                    else:
-                        banner = banner.subclip(0, clip.duration)
+                    banner = banner.resize(width=int(self.frame_w * BANNER_WIDTH_RATIO))
+                    banner = banner.set_position(("center", BANNER_TOP_MARGIN))
                     layers.append(banner)
                 else:
                     print("   ⚠️  Баннеры повреждены, пропускаем")

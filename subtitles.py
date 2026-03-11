@@ -10,7 +10,7 @@ import whisper
 from config import (
     WHISPER_MODEL, WHISPER_LANGUAGE,
     FONT_PATH, FONT_SIZE, SUBTITLE_WORDS_PER_PHRASE,
-    SUBTITLE_BG_COLOR, SUBTITLE_TEXT_COLOR, SUBTITLE_PADDING
+    SUBTITLE_BG_COLOR, SUBTITLE_TEXT_COLOR, SUBTITLE_PADDING, SUBTITLE_BOTTOM_MARGIN
 )
 
 
@@ -112,7 +112,7 @@ def add_stylish_subtitles(video, subtitles):
                 text_h = bbox[3] - bbox[1]
 
                 x = (video.w - text_w) // 2
-                y = (video.h - text_h) // 2
+                y = max(SUBTITLE_PADDING, video.h - text_h - SUBTITLE_BOTTOM_MARGIN)
 
                 draw.rectangle(
                     (
@@ -130,7 +130,7 @@ def add_stylish_subtitles(video, subtitles):
                 txt_clip = (
                     ImageClip(np.array(img), duration=phrase_duration)
                     .set_start(phrase_start)
-                    .set_position("center")
+                    .set_position(("center", y))
                 )
 
                 subtitle_clips.append(txt_clip)
