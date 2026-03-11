@@ -125,3 +125,19 @@ python video_cutter.py --input input/clips/source.mp4 --output output/cuts --ran
 - Добавлена мультиплатформенная пакетная сборка (VK / YouTube / TikTok / Instagram).
 - Терминальный UI теперь позволяет выбирать платформы для каждой задачи.
 - Нарезка видео вынесена в отдельный полноценный CLI-скрипт.
+
+## 🧾 Как проверить изменения в Git/GitHub
+
+После коммита можно посмотреть, что именно изменилось:
+
+```bash
+git log --oneline -n 10
+git show <commit_hash>
+```
+
+Чтобы отправить изменения на GitHub:
+
+```bash
+git push -u origin <branch_name>
+```
+
