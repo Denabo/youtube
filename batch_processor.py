@@ -11,8 +11,6 @@ from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, Com
 
 from config import (
     BANNER_TOP_MARGIN,
-    BANNER_HEIGHT_RATIO,
-    BANNER_WIDTH_RATIO,
     CLIP_VERTICAL_POSITION,
     DEFAULT_MUSIC_VOLUME,
     DEFAULT_PLATFORMS,
@@ -207,11 +205,6 @@ class VideoProcessor:
                 if banner is not None:
                     banner = chroma_key(banner)
                     banner = self._trim_transparent_bounds(banner)
-                    target_height = int(self.frame_h * BANNER_HEIGHT_RATIO)
-                    banner = banner.resize(height=target_height)
-                    max_width = int(self.frame_w * BANNER_WIDTH_RATIO)
-                    if banner.w > max_width:
-                        banner = banner.resize(width=max_width)
                     banner = banner.set_position(("center", BANNER_TOP_MARGIN))
                     layers.append(banner)
                 else:

@@ -65,8 +65,6 @@ SUBTITLE_BOTTOM_MARGIN = 140
 # === ПАРАМЕТРЫ РАСПОЛОЖЕНИЯ ===
 CLIP_VERTICAL_POSITION = 0.35  # Чуть выше центра
 BANNER_TOP_MARGIN = 0
-BANNER_WIDTH_RATIO = 0.9
-BANNER_HEIGHT_RATIO = 0.08
 
 # === WHISPER ===
 WHISPER_MODEL = "base"
