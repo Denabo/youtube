@@ -4,13 +4,14 @@
 import os
 import shutil
 import cv2
+import numpy as np
 from pathlib import Path
 
 from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, CompositeAudioClip, ImageClip
 
 from config import (
+    BANNER_VERTICAL_OFFSET,
     BANNER_TOP_MARGIN,
-    BANNER_WIDTH_RATIO,
     CLIP_VERTICAL_POSITION,
     DEFAULT_MUSIC_VOLUME,
     DEFAULT_PLATFORMS,
@@ -129,6 +130,31 @@ class VideoProcessor:
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         return ImageClip(frame).set_duration(duration)
 
+    def _trim_transparent_bounds(self, clip, alpha_threshold=0.6):
+        """Обрезает прозрачные поля у клипа по маске (берём первый кадр маски)."""
+        if clip.mask is None:
+            return clip
+
+        try:
+            mask_frame = clip.mask.get_frame(0)
+            if mask_frame.ndim == 3:
+                mask_frame = mask_frame[:, :, 0]
+
+            binary = mask_frame > alpha_threshold
+            min_pixels_in_row = max(3, int(binary.shape[1] * 0.01))
+            min_pixels_in_col = max(3, int(binary.shape[0] * 0.005))
+
+            row_hits = np.where(binary.sum(axis=1) > min_pixels_in_row)[0]
+            col_hits = np.where(binary.sum(axis=0) > min_pixels_in_col)[0]
+            if len(row_hits) == 0 or len(col_hits) == 0:
+                return clip
+
+            y1, y2 = int(row_hits.min()), int(row_hits.max()) + 1
+            x1, x2 = int(col_hits.min()), int(col_hits.max()) + 1
+            return clip.crop(x1=x1, y1=y1, x2=x2, y2=y2)
+        except Exception:
+            return clip
+
     def _mode_universal(self, clip):
         """Универсальная сборка: фон/обрезка/уменьшение/баннер"""
         print(f"   🎬 Режим: {self.mode['name']}")
@@ -179,8 +205,9 @@ class VideoProcessor:
                 banner = self._load_banner_clip(banner_path, clip.duration)
                 if banner is not None:
                     banner = chroma_key(banner)
-                    banner = banner.resize(width=int(self.frame_w * BANNER_WIDTH_RATIO))
-                    banner = banner.set_position(("center", BANNER_TOP_MARGIN))
+                    banner = self._trim_transparent_bounds(banner)
+                    banner_y = BANNER_TOP_MARGIN + BANNER_VERTICAL_OFFSET
+                    banner = banner.set_position(("center", banner_y))
                     layers.append(banner)
                 else:
                     print("   ⚠️  Баннеры повреждены, пропускаем")
@@ -257,6 +284,10 @@ class BatchProcessor:
             try:
                 print("   💬 Генерация субтитров (один раз на клип)...")
                 subtitles = generate_subtitles(clip_path)
+                if subtitles:
+                    print(f"   ✅ Субтитры: {len(subtitles)} сегментов")
+                else:
+                    print("   ⚠️  Субтитры не найдены (пустой результат распознавания)")
 
                 for platform in platforms:
                     if platform not in PLATFORM_PROFILES:

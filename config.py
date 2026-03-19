@@ -48,8 +48,8 @@ FPS = 30
 DEFAULT_MUSIC_VOLUME = 0.2
 VOICE_VOLUME = 1.0
 
-# === ПАРАМЕТРЫ ХРОМАКЕЯ ===
-CHROMA_COLOR = (0, 255, 0)
+# === ПАРАМЕТРЫ ХРОМАКЕЯ (розовый/маджента) ===
+CHROMA_COLOR = (255, 0, 255)
 CHROMA_TOLERANCE = 120
 CHROMA_EDGE_BLUR = 1
 
@@ -64,12 +64,12 @@ SUBTITLE_BOTTOM_MARGIN = 140
 
 # === ПАРАМЕТРЫ РАСПОЛОЖЕНИЯ ===
 CLIP_VERTICAL_POSITION = 0.35  # Чуть выше центра
-BANNER_TOP_MARGIN = 80
-BANNER_WIDTH_RATIO = 0.9
+BANNER_TOP_MARGIN = 0
+BANNER_VERTICAL_OFFSET = 0  # может быть отрицательным или большим, чем высота кадра
 
 # === WHISPER ===
 WHISPER_MODEL = "base"
-WHISPER_LANGUAGE = "ru"
+WHISPER_LANGUAGE = None  # None = автоопределение языка
 
 # === ТИПЫ ОБРАБОТКИ ===
 PROCESSING_MODES = {

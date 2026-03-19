@@ -44,11 +44,10 @@ def generate_subtitles(video_path):
         model = whisper.load_model(WHISPER_MODEL)
 
         # Распознаём речь
-        result = model.transcribe(
-            temp_audio,
-            language=WHISPER_LANGUAGE,
-            verbose=False
-        )
+        transcribe_kwargs = {"verbose": False}
+        if WHISPER_LANGUAGE:
+            transcribe_kwargs["language"] = WHISPER_LANGUAGE
+        result = model.transcribe(temp_audio, **transcribe_kwargs)
 
         # Формируем список субтитров
         subtitles = []
@@ -107,9 +106,12 @@ def add_stylish_subtitles(video, subtitles):
                 img = Image.new("RGBA", (video.w, video.h), (0, 0, 0, 0))
                 draw = ImageDraw.Draw(img)
 
-                bbox = draw.textbbox((0, 0), phrase, font=font)
-                text_w = bbox[2] - bbox[0]
-                text_h = bbox[3] - bbox[1]
+                try:
+                    bbox = draw.textbbox((0, 0), phrase, font=font)
+                    text_w = bbox[2] - bbox[0]
+                    text_h = bbox[3] - bbox[1]
+                except Exception:
+                    text_w, text_h = draw.textsize(phrase, font=font)
 
                 x = (video.w - text_w) // 2
                 y = max(SUBTITLE_PADDING, video.h - text_h - SUBTITLE_BOTTOM_MARGIN)
