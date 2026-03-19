@@ -10,6 +10,7 @@ from pathlib import Path
 from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, CompositeAudioClip, ImageClip
 
 from config import (
+    BANNER_VERTICAL_OFFSET,
     BANNER_TOP_MARGIN,
     CLIP_VERTICAL_POSITION,
     DEFAULT_MUSIC_VOLUME,
@@ -205,7 +206,8 @@ class VideoProcessor:
                 if banner is not None:
                     banner = chroma_key(banner)
                     banner = self._trim_transparent_bounds(banner)
-                    banner = banner.set_position(("center", BANNER_TOP_MARGIN))
+                    banner_y = BANNER_TOP_MARGIN + BANNER_VERTICAL_OFFSET
+                    banner = banner.set_position(("center", banner_y))
                     layers.append(banner)
                 else:
                     print("   ⚠️  Баннеры повреждены, пропускаем")
