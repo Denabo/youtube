@@ -65,7 +65,7 @@ SUBTITLE_BOTTOM_MARGIN = 140
 # === ПАРАМЕТРЫ РАСПОЛОЖЕНИЯ ===
 CLIP_VERTICAL_POSITION = 0.35  # Чуть выше центра
 BANNER_TOP_MARGIN = 0
-BANNER_VERTICAL_OFFSET = 0  # может быть отрицательным или большим, чем высота кадра
+BANNER_VERTICAL_OFFSET = -700 # может быть отрицательным или большим, чем высота кадра
 
 # === WHISPER ===
 WHISPER_MODEL = "base"
