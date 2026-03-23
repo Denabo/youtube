@@ -104,6 +104,14 @@ PROCESSING_MODES = {
         "background": True,
         "resize_clip": True,
     },
+    "5": {
+        "name": "Субтитры + обрезка 9:16",
+        "type": "subtitles_crop",
+        "crop": True,
+        "banner": False,
+        "background": False,
+        "resize_clip": False,
+    },
 }
 
 # === РЕНДЕР ===
