@@ -61,6 +61,13 @@ SUBTITLE_BG_COLOR = (0, 0, 0, 180)
 SUBTITLE_TEXT_COLOR = "white"
 SUBTITLE_PADDING = 20
 SUBTITLE_VERTICAL_OFFSET = 480  # Смещение субтитров: ~3/4 высоты для 1920px (можно менять)
+SUBTITLE_RENDERER = "moviepy"  # "moviepy" или "ass"
+
+# ASS-стиль (если SUBTITLE_RENDERER = "ass")
+ASS_FONT_NAME = "Arial Bold"
+ASS_OUTLINE = 3
+ASS_SHADOW = 1
+ASS_ALIGNMENT = 2  # 2 = по центру снизу
 
 # === ПАРАМЕТРЫ РАСПОЛОЖЕНИЯ ===
 CLIP_VERTICAL_POSITION = 0.35  # Чуть выше центра

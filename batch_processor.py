@@ -4,12 +4,18 @@
 import os
 import shutil
 from pathlib import Path
+import uuid
 
 from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, CompositeAudioClip
 
 from config import *
 from chroma_key import chroma_key
-from subtitles import generate_subtitles, add_stylish_subtitles
+from subtitles import (
+    generate_subtitles,
+    add_stylish_subtitles,
+    create_ass_subtitles_file,
+    burn_ass_subtitles,
+)
 
 
 class VideoProcessor:
@@ -37,24 +43,50 @@ class VideoProcessor:
         if self.music_path and os.path.exists(self.music_path):
             video = self._add_music(video)
 
-        print("   💬 Генерация субтитров...")
-        subtitles = generate_subtitles(self.clip_path)
-        video = add_stylish_subtitles(video, subtitles)
-
         output_dir = Path(output_path).parent
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        print("   💾 Рендер видео...")
-        video.write_videofile(
-            output_path,
-            codec="libx264",
-            audio_codec="aac",
-            fps=profile["fps"],
-            threads=RENDER_THREADS,
-            preset=RENDER_PRESET,
-            bitrate=RENDER_BITRATE,
-            logger=None,
-        )
+        print("   💬 Генерация субтитров...")
+        subtitles = generate_subtitles(self.clip_path)
+
+        if SUBTITLE_RENDERER == "ass":
+            print("   🎨 Рендер субтитров через ASS...")
+            temp_id = uuid.uuid4().hex[:10]
+            temp_video_path = str(Path(TEMP_DIR) / f"{self.clip_name}_{temp_id}_base.mp4")
+            temp_ass_path = str(Path(TEMP_DIR) / f"{self.clip_name}_{temp_id}.ass")
+
+            print("   💾 Рендер базового видео...")
+            video.write_videofile(
+                temp_video_path,
+                codec="libx264",
+                audio_codec="aac",
+                fps=profile["fps"],
+                threads=RENDER_THREADS,
+                preset=RENDER_PRESET,
+                bitrate=RENDER_BITRATE,
+                logger=None,
+            )
+
+            create_ass_subtitles_file(subtitles, self.frame_h, temp_ass_path)
+            burn_ass_subtitles(temp_video_path, temp_ass_path, output_path)
+
+            if os.path.exists(temp_video_path):
+                os.remove(temp_video_path)
+            if os.path.exists(temp_ass_path):
+                os.remove(temp_ass_path)
+        else:
+            video = add_stylish_subtitles(video, subtitles)
+            print("   💾 Рендер видео...")
+            video.write_videofile(
+                output_path,
+                codec="libx264",
+                audio_codec="aac",
+                fps=profile["fps"],
+                threads=RENDER_THREADS,
+                preset=RENDER_PRESET,
+                bitrate=RENDER_BITRATE,
+                logger=None,
+            )
 
         clip.close()
         video.close()
