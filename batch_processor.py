@@ -119,16 +119,24 @@ class VideoProcessor:
             banner_files = list(Path(INPUT_BANNERS_DIR).glob("*.mp4"))
             if banner_files:
                 print(f"   🎨 Баннер: {banner_files[0].name}")
-                banner = VideoFileClip(str(banner_files[0])).without_audio()
-                banner = chroma_key(banner)
-                if banner.duration < clip.duration:
-                    banner = banner.loop(duration=clip.duration)
-                else:
-                    banner = banner.subclip(0, clip.duration)
+                try:
+                    banner = VideoFileClip(str(banner_files[0])).without_audio()
+                except Exception as e:
+                    print(f"   ⚠️  Ошибка чтения баннера, пропускаем: {e}")
+                    banner = None
 
-                banner = banner.set_duration(clip.duration)
-                banner = banner.set_position(("center", BANNER_VERTICAL_POSITION))
-                layers.append(banner)
+                if banner and banner.duration > 0:
+                    # Сначала растягиваем/обрезаем по длительности,
+                    # затем применяем хромакей — это избегает рассинхрона маски.
+                    if banner.duration < clip.duration:
+                        banner = banner.loop(duration=clip.duration)
+                    else:
+                        banner = banner.subclip(0, clip.duration)
+
+                    banner = chroma_key(banner)
+                    banner = banner.set_start(0).set_duration(clip.duration)
+                    banner = banner.set_position(("center", BANNER_VERTICAL_POSITION))
+                    layers.append(banner)
             else:
                 print("   ⚠️  Баннер не найден, пропускаем")
 
