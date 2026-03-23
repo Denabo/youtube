@@ -60,11 +60,11 @@ SUBTITLE_WORDS_PER_PHRASE = 2
 SUBTITLE_BG_COLOR = (0, 0, 0, 180)
 SUBTITLE_TEXT_COLOR = "white"
 SUBTITLE_PADDING = 20
-SUBTITLE_VERTICAL_OFFSET = 0  # Смещение субтитров по вертикали (px, можно отрицательное)
+SUBTITLE_VERTICAL_OFFSET = 480  # Смещение субтитров: ~3/4 высоты для 1920px (можно менять)
 
 # === ПАРАМЕТРЫ РАСПОЛОЖЕНИЯ ===
 CLIP_VERTICAL_POSITION = 0.35  # Чуть выше центра
-BANNER_VERTICAL_POSITION = 0  # Позиция баннера по вертикали (px, можно отрицательная)
+BANNER_VERTICAL_POSITION = -700  # Позиция баннера по вертикали (px, можно отрицательная)
 
 # === WHISPER ===
 WHISPER_MODEL = "base"

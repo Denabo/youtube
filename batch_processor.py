@@ -126,6 +126,7 @@ class VideoProcessor:
                 else:
                     banner = banner.subclip(0, clip.duration)
 
+                banner = banner.set_duration(clip.duration)
                 banner = banner.set_position(("center", BANNER_VERTICAL_POSITION))
                 layers.append(banner)
             else:
