@@ -12,6 +12,7 @@ INPUT_CLIPS_DIR = str(BASE_DIR / "input" / "clips")
 INPUT_MUSIC_DIR = str(BASE_DIR / "input" / "music")
 INPUT_BACKGROUNDS_DIR = str(BASE_DIR / "input" / "backgrounds")
 INPUT_BANNERS_DIR = str(BASE_DIR / "input" / "banners")
+INPUT_FONTS_DIR = str(BASE_DIR / "input" / "fonts")
 
 # Выходные папки
 OUTPUT_DIR = str(BASE_DIR / "output")
@@ -24,6 +25,7 @@ for directory in [
     INPUT_MUSIC_DIR,
     INPUT_BACKGROUNDS_DIR,
     INPUT_BANNERS_DIR,
+    INPUT_FONTS_DIR,
     OUTPUT_DIR,
     PROCESSED_CLIPS_DIR,
     TEMP_DIR,
@@ -54,11 +56,12 @@ CHROMA_TOLERANCE = 120
 CHROMA_EDGE_BLUR = 1
 
 # === ПАРАМЕТРЫ СУБТИТРОВ ===
-FONT_PATH = "C:/Windows/Fonts/arialbd.ttf"
+FONT_PATH = str(BASE_DIR / "input" / "fonts" / "subtitle_font.ttf")
 FONT_SIZE = 60
 SUBTITLE_WORDS_PER_PHRASE = 2
 SUBTITLE_BG_COLOR = (0, 0, 0, 180)
 SUBTITLE_TEXT_COLOR = "white"
+SUBTITLE_KARAOKE_COLOR = "#ffd400"
 SUBTITLE_PADDING = 20
 SUBTITLE_VERTICAL_OFFSET = 480  # Смещение субтитров: ~3/4 высоты для 1920px (можно менять)
 SUBTITLE_RENDERER = "moviepy"  # "moviepy" или "ass"
