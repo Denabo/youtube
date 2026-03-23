@@ -49,7 +49,7 @@ DEFAULT_MUSIC_VOLUME = 0.2
 VOICE_VOLUME = 1.0
 
 # === ПАРАМЕТРЫ ХРОМАКЕЯ ===
-CHROMA_COLOR = (0, 255, 0)
+CHROMA_COLOR = (255, 0, 255)
 CHROMA_TOLERANCE = 120
 CHROMA_EDGE_BLUR = 1
 
@@ -60,9 +60,11 @@ SUBTITLE_WORDS_PER_PHRASE = 2
 SUBTITLE_BG_COLOR = (0, 0, 0, 180)
 SUBTITLE_TEXT_COLOR = "white"
 SUBTITLE_PADDING = 20
+SUBTITLE_VERTICAL_OFFSET = 0  # Смещение субтитров по вертикали (px, можно отрицательное)
 
 # === ПАРАМЕТРЫ РАСПОЛОЖЕНИЯ ===
 CLIP_VERTICAL_POSITION = 0.35  # Чуть выше центра
+BANNER_VERTICAL_POSITION = 0  # Позиция баннера по вертикали (px, можно отрицательная)
 
 # === WHISPER ===
 WHISPER_MODEL = "base"
