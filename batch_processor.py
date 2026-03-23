@@ -52,8 +52,8 @@ class VideoProcessor:
         if SUBTITLE_RENDERER == "ass":
             print("   🎨 Рендер субтитров через ASS...")
             temp_id = uuid.uuid4().hex[:10]
-            temp_video_path = str(Path(TEMP_DIR) / f"{self.clip_name}_{temp_id}_base.mp4")
-            temp_ass_path = str(Path(TEMP_DIR) / f"{self.clip_name}_{temp_id}.ass")
+            temp_video_path = str(Path(TEMP_DIR) / f"base_{temp_id}.mp4")
+            temp_ass_path = str(Path(TEMP_DIR) / f"subs_{temp_id}.ass")
 
             print("   💾 Рендер базового видео...")
             video.write_videofile(

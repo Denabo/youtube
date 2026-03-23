@@ -4,6 +4,7 @@
 import os
 import re
 import subprocess
+from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from moviepy.editor import VideoFileClip, ImageClip, CompositeVideoClip
@@ -202,15 +203,24 @@ def burn_ass_subtitles(input_video_path, ass_path, output_video_path):
     """
     Вжигает ASS-субтитры в видео через ffmpeg.
     """
+    ass_filter_path = Path(ass_path).resolve().as_posix()
+    if re.match(r"^[A-Za-z]:", ass_filter_path):
+        ass_filter_path = ass_filter_path[0] + r"\:" + ass_filter_path[2:]
+    ass_filter_path = ass_filter_path.replace("'", r"\'")
+
     command = [
         "ffmpeg",
         "-y",
         "-i", input_video_path,
-        "-vf", f"subtitles={ass_path}",
+        "-vf", f"subtitles='{ass_filter_path}'",
         "-c:v", "libx264",
         "-preset", "medium",
         "-crf", "20",
         "-c:a", "copy",
         output_video_path,
     ]
-    subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError as e:
+        error_text = (e.stderr or b"").decode("utf-8", errors="ignore")
+        raise RuntimeError(f"Ошибка ffmpeg при вжигании ASS-субтитров: {error_text}")
