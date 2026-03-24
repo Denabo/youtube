@@ -13,7 +13,7 @@ import whisper
 from config import (
     WHISPER_MODEL, WHISPER_LANGUAGE,
     FONT_PATH, FONT_SIZE, SUBTITLE_WORDS_PER_PHRASE,
-    SUBTITLE_BG_COLOR, SUBTITLE_TEXT_COLOR, SUBTITLE_KARAOKE_COLOR, SUBTITLE_PADDING,
+    SUBTITLE_BG_COLOR, SUBTITLE_TEXT_COLOR, SUBTITLE_PADDING,
     SUBTITLE_VERTICAL_OFFSET,
     ASS_FONT_NAME, ASS_OUTLINE, ASS_SHADOW, ASS_ALIGNMENT
 )
@@ -91,45 +91,13 @@ def add_stylish_subtitles(video, subtitles):
     except:
         font = ImageFont.load_default()
 
-    words_per_phrase = max(1, min(2, SUBTITLE_WORDS_PER_PHRASE))
-
-    def _build_karaoke_image(phrase_words, highlight_index):
-        measure_img = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
-        measure_draw = ImageDraw.Draw(measure_img)
-        space_w = measure_draw.textbbox((0, 0), " ", font=font)[2]
-
-        word_sizes = []
-        for word in phrase_words:
-            bbox = measure_draw.textbbox((0, 0), word, font=font)
-            word_sizes.append((bbox[2] - bbox[0], bbox[3] - bbox[1]))
-
-        text_w = sum(w for w, _ in word_sizes) + space_w * max(0, len(phrase_words) - 1)
-        text_h = max((h for _, h in word_sizes), default=FONT_SIZE)
-
-        img_w = text_w + SUBTITLE_PADDING * 2
-        img_h = text_h + SUBTITLE_PADDING * 2
-        img = Image.new("RGBA", (img_w, img_h), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(img)
-
-        draw.rectangle((0, 0, img_w, img_h), fill=SUBTITLE_BG_COLOR)
-
-        x_cursor = SUBTITLE_PADDING
-        for idx, word in enumerate(phrase_words):
-            fill_color = SUBTITLE_KARAOKE_COLOR if idx == highlight_index else SUBTITLE_TEXT_COLOR
-            draw.text((x_cursor, SUBTITLE_PADDING), word, font=font, fill=fill_color)
-            x_cursor += word_sizes[idx][0] + space_w
-
-        return np.array(img), img_w, img_h
+    words_per_phrase = 1
 
     for start, end, text in subtitles:
-        # Разбиваем текст на короткие фразы
         words = text.split()
         if not words:
             continue
-        short_phrases = [
-            words[i:i + words_per_phrase]
-            for i in range(0, len(words), words_per_phrase)
-        ]
+        short_phrases = [words[i:i + words_per_phrase] for i in range(0, len(words), words_per_phrase)]
 
         phrase_duration = (end - start) / len(short_phrases)
 
@@ -138,20 +106,29 @@ def add_stylish_subtitles(video, subtitles):
                 if phrase_duration <= 0:
                     continue
 
-                word_duration = phrase_duration / len(phrase_words)
                 phrase_start = start + i * phrase_duration
+                phrase = " ".join(phrase_words)
 
-                for highlight_index in range(len(phrase_words)):
-                    img_np, img_w, img_h = _build_karaoke_image(phrase_words, highlight_index)
-                    x = (video.w - img_w) // 2
-                    y = (video.h - img_h) // 2 + SUBTITLE_VERTICAL_OFFSET
+                measure_img = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+                measure_draw = ImageDraw.Draw(measure_img)
+                bbox = measure_draw.textbbox((0, 0), phrase, font=font)
+                text_w = max(1, bbox[2] - bbox[0])
+                text_h = max(1, bbox[3] - bbox[1])
 
-                    txt_clip = (
-                        ImageClip(img_np, duration=word_duration)
-                        .set_start(phrase_start + highlight_index * word_duration)
-                        .set_position((x, y))
-                    )
-                    subtitle_clips.append(txt_clip)
+                img_w = text_w + SUBTITLE_PADDING * 2
+                img_h = text_h + SUBTITLE_PADDING * 2
+                img = Image.new("RGBA", (img_w, img_h), SUBTITLE_BG_COLOR)
+                draw = ImageDraw.Draw(img)
+                draw.text((SUBTITLE_PADDING, SUBTITLE_PADDING), phrase, font=font, fill=SUBTITLE_TEXT_COLOR)
+
+                x = (video.w - img_w) // 2
+                y = (video.h - img_h) // 2 + SUBTITLE_VERTICAL_OFFSET
+                txt_clip = (
+                    ImageClip(np.array(img), duration=phrase_duration)
+                    .set_start(phrase_start)
+                    .set_position((x, y))
+                )
+                subtitle_clips.append(txt_clip)
 
             except:
                 continue

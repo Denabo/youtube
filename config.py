@@ -56,15 +56,14 @@ CHROMA_TOLERANCE = 120
 CHROMA_EDGE_BLUR = 1
 
 # === ПАРАМЕТРЫ СУБТИТРОВ ===
-FONT_PATH = str(BASE_DIR / "input" / "fonts" / "subtitle_font.ttf")
-FONT_SIZE = 60
-SUBTITLE_WORDS_PER_PHRASE = 2
-SUBTITLE_BG_COLOR = (0, 0, 0, 180)
+FONT_PATH = "C:/Windows/Fonts/arialbd.ttf"
+FONT_SIZE = 38  # ~1 см высота текста
+SUBTITLE_WORDS_PER_PHRASE = 1
+SUBTITLE_BG_COLOR = (0, 0, 0, 0)
 SUBTITLE_TEXT_COLOR = "white"
-SUBTITLE_KARAOKE_COLOR = "#ffd400"
-SUBTITLE_PADDING = 20
+SUBTITLE_PADDING = 0
 SUBTITLE_VERTICAL_OFFSET = 480  # Смещение субтитров: ~3/4 высоты для 1920px (можно менять)
-SUBTITLE_RENDERER = "moviepy"  # "moviepy" или "ass"
+SUBTITLE_RENDERER = "moviepy"
 
 # ASS-стиль (если SUBTITLE_RENDERER = "ass")
 ASS_FONT_NAME = "Arial Bold"
