@@ -57,10 +57,12 @@ CHROMA_EDGE_BLUR = 1
 
 # === ПАРАМЕТРЫ СУБТИТРОВ ===
 FONT_PATH = "C:/Windows/Fonts/arialbd.ttf"
-FONT_SIZE = 38  # ~1 см высота текста
+FONT_SIZE = 70
 SUBTITLE_WORDS_PER_PHRASE = 1
 SUBTITLE_BG_COLOR = (0, 0, 0, 0)
-SUBTITLE_TEXT_COLOR = "white"
+SUBTITLE_TEXT_COLOR = "#ffd400"
+SUBTITLE_STROKE_COLOR = "black"
+SUBTITLE_STROKE_WIDTH = 4
 SUBTITLE_PADDING = 0
 SUBTITLE_VERTICAL_OFFSET = 480  # Смещение субтитров: ~3/4 высоты для 1920px (можно менять)
 SUBTITLE_RENDERER = "moviepy"

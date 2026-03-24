@@ -13,7 +13,7 @@ import whisper
 from config import (
     WHISPER_MODEL, WHISPER_LANGUAGE,
     FONT_PATH, FONT_SIZE, SUBTITLE_WORDS_PER_PHRASE,
-    SUBTITLE_BG_COLOR, SUBTITLE_TEXT_COLOR, SUBTITLE_PADDING,
+    SUBTITLE_BG_COLOR, SUBTITLE_TEXT_COLOR, SUBTITLE_STROKE_COLOR, SUBTITLE_STROKE_WIDTH, SUBTITLE_PADDING,
     SUBTITLE_VERTICAL_OFFSET,
     ASS_FONT_NAME, ASS_OUTLINE, ASS_SHADOW, ASS_ALIGNMENT
 )
@@ -111,7 +111,7 @@ def add_stylish_subtitles(video, subtitles):
 
                 measure_img = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
                 measure_draw = ImageDraw.Draw(measure_img)
-                bbox = measure_draw.textbbox((0, 0), phrase, font=font)
+                bbox = measure_draw.textbbox((0, 0), phrase, font=font, stroke_width=SUBTITLE_STROKE_WIDTH)
                 text_w = max(1, bbox[2] - bbox[0])
                 text_h = max(1, bbox[3] - bbox[1])
 
@@ -119,7 +119,14 @@ def add_stylish_subtitles(video, subtitles):
                 img_h = text_h + SUBTITLE_PADDING * 2
                 img = Image.new("RGBA", (img_w, img_h), SUBTITLE_BG_COLOR)
                 draw = ImageDraw.Draw(img)
-                draw.text((SUBTITLE_PADDING, SUBTITLE_PADDING), phrase, font=font, fill=SUBTITLE_TEXT_COLOR)
+                draw.text(
+                    (SUBTITLE_PADDING, SUBTITLE_PADDING),
+                    phrase,
+                    font=font,
+                    fill=SUBTITLE_TEXT_COLOR,
+                    stroke_width=SUBTITLE_STROKE_WIDTH,
+                    stroke_fill=SUBTITLE_STROKE_COLOR,
+                )
 
                 x = (video.w - img_w) // 2
                 y = (video.h - img_h) // 2 + SUBTITLE_VERTICAL_OFFSET
