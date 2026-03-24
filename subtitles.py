@@ -115,12 +115,13 @@ def add_stylish_subtitles(video, subtitles):
                 text_w = max(1, bbox[2] - bbox[0])
                 text_h = max(1, bbox[3] - bbox[1])
 
-                img_w = text_w + SUBTITLE_PADDING * 2
-                img_h = text_h + SUBTITLE_PADDING * 2
+                safe_padding = max(SUBTITLE_PADDING, SUBTITLE_STROKE_WIDTH + 2)
+                img_w = text_w + safe_padding * 2
+                img_h = text_h + safe_padding * 2
                 img = Image.new("RGBA", (img_w, img_h), SUBTITLE_BG_COLOR)
                 draw = ImageDraw.Draw(img)
                 draw.text(
-                    (SUBTITLE_PADDING, SUBTITLE_PADDING),
+                    (safe_padding - bbox[0], safe_padding - bbox[1]),
                     phrase,
                     font=font,
                     fill=SUBTITLE_TEXT_COLOR,
