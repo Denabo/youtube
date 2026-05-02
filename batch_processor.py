@@ -37,13 +37,12 @@ class VideoProcessor:
         if self.music_path and os.path.exists(self.music_path):
             video = self._add_music(video)
 
-        print("   💬 Генерация субтитров...")
-        subtitles = generate_subtitles(self.clip_path)
-        video = add_stylish_subtitles(video, subtitles)
-
         output_dir = Path(output_path).parent
         output_dir.mkdir(parents=True, exist_ok=True)
 
+        print("   💬 Генерация субтитров...")
+        subtitles = generate_subtitles(self.clip_path)
+        video = add_stylish_subtitles(video, subtitles)
         print("   💾 Рендер видео...")
         video.write_videofile(
             output_path,
@@ -119,13 +118,24 @@ class VideoProcessor:
             banner_files = list(Path(INPUT_BANNERS_DIR).glob("*.mp4"))
             if banner_files:
                 print(f"   🎨 Баннер: {banner_files[0].name}")
-                banner = VideoFileClip(str(banner_files[0])).without_audio()
-                banner = chroma_key(banner)
-                if banner.duration < clip.duration:
-                    banner = banner.loop(duration=clip.duration)
-                else:
-                    banner = banner.subclip(0, clip.duration)
-                layers.append(banner)
+                try:
+                    banner = VideoFileClip(str(banner_files[0])).without_audio()
+                except Exception as e:
+                    print(f"   ⚠️  Ошибка чтения баннера, пропускаем: {e}")
+                    banner = None
+
+                if banner and banner.duration > 0:
+                    # Сначала растягиваем/обрезаем по длительности,
+                    # затем применяем хромакей — это избегает рассинхрона маски.
+                    if banner.duration < clip.duration:
+                        banner = banner.loop(duration=clip.duration)
+                    else:
+                        banner = banner.subclip(0, clip.duration)
+
+                    banner = chroma_key(banner)
+                    banner = banner.set_start(0).set_duration(clip.duration)
+                    banner = banner.set_position(("center", BANNER_VERTICAL_POSITION))
+                    layers.append(banner)
             else:
                 print("   ⚠️  Баннер не найден, пропускаем")
 

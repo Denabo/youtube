@@ -12,6 +12,7 @@ INPUT_CLIPS_DIR = str(BASE_DIR / "input" / "clips")
 INPUT_MUSIC_DIR = str(BASE_DIR / "input" / "music")
 INPUT_BACKGROUNDS_DIR = str(BASE_DIR / "input" / "backgrounds")
 INPUT_BANNERS_DIR = str(BASE_DIR / "input" / "banners")
+INPUT_FONTS_DIR = str(BASE_DIR / "input" / "fonts")
 
 # Выходные папки
 OUTPUT_DIR = str(BASE_DIR / "output")
@@ -24,6 +25,7 @@ for directory in [
     INPUT_MUSIC_DIR,
     INPUT_BACKGROUNDS_DIR,
     INPUT_BANNERS_DIR,
+    INPUT_FONTS_DIR,
     OUTPUT_DIR,
     PROCESSED_CLIPS_DIR,
     TEMP_DIR,
@@ -55,14 +57,25 @@ CHROMA_EDGE_BLUR = 1
 
 # === ПАРАМЕТРЫ СУБТИТРОВ ===
 FONT_PATH = "C:/Windows/Fonts/arialbd.ttf"
-FONT_SIZE = 60
-SUBTITLE_WORDS_PER_PHRASE = 2
-SUBTITLE_BG_COLOR = (0, 0, 0, 180)
-SUBTITLE_TEXT_COLOR = "white"
-SUBTITLE_PADDING = 20
+FONT_SIZE = 70
+SUBTITLE_WORDS_PER_PHRASE = 1
+SUBTITLE_BG_COLOR = (0, 0, 0, 0)
+SUBTITLE_TEXT_COLOR = "#ffd400"
+SUBTITLE_STROKE_COLOR = "black"
+SUBTITLE_STROKE_WIDTH = 4
+SUBTITLE_PADDING = 0
+SUBTITLE_VERTICAL_OFFSET = 380  # Смещение суб3# титров: ~3/4 высоты для 1920px (можно менять)
+SUBTITLE_RENDERER = "moviepy"
+
+# ASS-стиль (если SUBTITLE_RENDERER = "ass")
+ASS_FONT_NAME = "Arial Bold"
+ASS_OUTLINE = 3
+ASS_SHADOW = 1
+ASS_ALIGNMENT = 2  # 2 = по центру снизу
 
 # === ПАРАМЕТРЫ РАСПОЛОЖЕНИЯ ===
 CLIP_VERTICAL_POSITION = 0.35  # Чуть выше центра
+BANNER_VERTICAL_POSITION = -300  # Позиция баннера по вертикали (px, можно отрицательная)
 
 # === WHISPER ===
 WHISPER_MODEL = "base"
@@ -101,6 +114,14 @@ PROCESSING_MODES = {
         "banner": True,
         "background": True,
         "resize_clip": True,
+    },
+    "5": {
+        "name": "Субтитры + обрезка 9:16",
+        "type": "subtitles_crop",
+        "crop": True,
+        "banner": False,
+        "background": False,
+        "resize_clip": False,
     },
 }
 

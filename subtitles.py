@@ -2,6 +2,9 @@
 Модуль для генерации и добавления субтитров
 """
 import os
+import re
+import subprocess
+from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from moviepy.editor import VideoFileClip, ImageClip, CompositeVideoClip
@@ -10,7 +13,9 @@ import whisper
 from config import (
     WHISPER_MODEL, WHISPER_LANGUAGE,
     FONT_PATH, FONT_SIZE, SUBTITLE_WORDS_PER_PHRASE,
-    SUBTITLE_BG_COLOR, SUBTITLE_TEXT_COLOR, SUBTITLE_PADDING
+    SUBTITLE_BG_COLOR, SUBTITLE_TEXT_COLOR, SUBTITLE_STROKE_COLOR, SUBTITLE_STROKE_WIDTH, SUBTITLE_PADDING,
+    SUBTITLE_VERTICAL_OFFSET,
+    ASS_FONT_NAME, ASS_OUTLINE, ASS_SHADOW, ASS_ALIGNMENT
 )
 
 
@@ -86,50 +91,140 @@ def add_stylish_subtitles(video, subtitles):
     except:
         font = ImageFont.load_default()
 
+    words_per_phrase = 1
+
     for start, end, text in subtitles:
-        # Разбиваем текст на короткие фразы
         words = text.split()
-        short_phrases = [
-            " ".join(words[i:i + SUBTITLE_WORDS_PER_PHRASE])
-            for i in range(0, len(words), SUBTITLE_WORDS_PER_PHRASE)
-        ]
+        if not words:
+            continue
+        short_phrases = [words[i:i + words_per_phrase] for i in range(0, len(words), words_per_phrase)]
 
         phrase_duration = (end - start) / len(short_phrases)
 
-        for i, phrase in enumerate(short_phrases):
+        for i, phrase_words in enumerate(short_phrases):
             try:
-                img = Image.new("RGBA", (video.w, video.h), (0, 0, 0, 0))
-                draw = ImageDraw.Draw(img)
-
-                bbox = draw.textbbox((0, 0), phrase, font=font)
-                text_w = bbox[2] - bbox[0]
-                text_h = bbox[3] - bbox[1]
-
-                x = (video.w - text_w) // 2
-                y = (video.h - text_h) // 2
-
-                draw.rectangle(
-                    (
-                        x - SUBTITLE_PADDING,
-                        y - SUBTITLE_PADDING,
-                        x + text_w + SUBTITLE_PADDING,
-                        y + text_h + SUBTITLE_PADDING
-                    ),
-                    fill=SUBTITLE_BG_COLOR
-                )
-
-                draw.text((x, y), phrase, font=font, fill=SUBTITLE_TEXT_COLOR)
+                if phrase_duration <= 0:
+                    continue
 
                 phrase_start = start + i * phrase_duration
+                phrase = " ".join(phrase_words)
+
+                measure_img = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+                measure_draw = ImageDraw.Draw(measure_img)
+                bbox = measure_draw.textbbox((0, 0), phrase, font=font, stroke_width=SUBTITLE_STROKE_WIDTH)
+                text_w = max(1, bbox[2] - bbox[0])
+                text_h = max(1, bbox[3] - bbox[1])
+
+                safe_padding = max(SUBTITLE_PADDING, SUBTITLE_STROKE_WIDTH + 2)
+                img_w = text_w + safe_padding * 2
+                img_h = text_h + safe_padding * 2
+                img = Image.new("RGBA", (img_w, img_h), SUBTITLE_BG_COLOR)
+                draw = ImageDraw.Draw(img)
+                draw.text(
+                    (safe_padding - bbox[0], safe_padding - bbox[1]),
+                    phrase,
+                    font=font,
+                    fill=SUBTITLE_TEXT_COLOR,
+                    stroke_width=SUBTITLE_STROKE_WIDTH,
+                    stroke_fill=SUBTITLE_STROKE_COLOR,
+                )
+
+                x = (video.w - img_w) // 2
+                y = (video.h - img_h) // 2 + SUBTITLE_VERTICAL_OFFSET
                 txt_clip = (
                     ImageClip(np.array(img), duration=phrase_duration)
                     .set_start(phrase_start)
-                    .set_position("center")
+                    .set_position((x, y))
                 )
-
                 subtitle_clips.append(txt_clip)
 
             except:
                 continue
 
     return CompositeVideoClip([video, *subtitle_clips])
+
+
+def _seconds_to_ass_time(seconds):
+    """Преобразует секунды в формат времени ASS: H:MM:SS.cc"""
+    total_cs = max(0, int(round(seconds * 100)))
+    cs = total_cs % 100
+    total_s = total_cs // 100
+    s = total_s % 60
+    total_m = total_s // 60
+    m = total_m % 60
+    h = total_m // 60
+    return f"{h}:{m:02d}:{s:02d}.{cs:02d}"
+
+
+def _ass_escape_text(text):
+    """Экранирует спецсимволы для ASS/SSA диалогов."""
+    text = re.sub(r"[\r\n]+", " ", text.strip())
+    text = text.replace("{", r"\{").replace("}", r"\}")
+    return text
+
+
+def create_ass_subtitles_file(subtitles, video_height, ass_path):
+    """
+    Создаёт stylized .ass файл из распознанных субтитров.
+
+    Args:
+        subtitles: [(start, end, text), ...]
+        video_height: высота видео (для расчёта нижнего отступа)
+        ass_path: путь сохранения .ass
+    """
+    margin_v = max(0, int(video_height / 2 - SUBTITLE_VERTICAL_OFFSET))
+
+    header = f"""[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: {video_height}
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,{ASS_FONT_NAME},{FONT_SIZE},&H00FFFFFF,&H0000FFFF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,{ASS_OUTLINE},{ASS_SHADOW},{ASS_ALIGNMENT},30,30,{margin_v},1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+
+    lines = [header]
+    for start, end, text in subtitles:
+        if not text.strip():
+            continue
+        start_ts = _seconds_to_ass_time(start)
+        end_ts = _seconds_to_ass_time(end)
+        safe_text = _ass_escape_text(text)
+        lines.append(f"Dialogue: 0,{start_ts},{end_ts},Default,,0,0,0,,{safe_text}\n")
+
+    with open(ass_path, "w", encoding="utf-8") as f:
+        f.writelines(lines)
+
+    return ass_path
+
+
+def burn_ass_subtitles(input_video_path, ass_path, output_video_path):
+    """
+    Вжигает ASS-субтитры в видео через ffmpeg.
+    """
+    ass_filter_path = Path(ass_path).resolve().as_posix()
+    if re.match(r"^[A-Za-z]:", ass_filter_path):
+        ass_filter_path = ass_filter_path[0] + r"\:" + ass_filter_path[2:]
+    ass_filter_path = ass_filter_path.replace("'", r"\'")
+
+    command = [
+        "ffmpeg",
+        "-y",
+        "-i", input_video_path,
+        "-vf", f"subtitles='{ass_filter_path}'",
+        "-c:v", "libx264",
+        "-preset", "medium",
+        "-crf", "20",
+        "-c:a", "copy",
+        output_video_path,
+    ]
+    try:
+        subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError as e:
+        error_text = (e.stderr or b"").decode("utf-8", errors="ignore")
+        raise RuntimeError(f"Ошибка ffmpeg при вжигании ASS-субтитров: {error_text}")
