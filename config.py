@@ -51,7 +51,7 @@ DEFAULT_MUSIC_VOLUME = 0.2
 VOICE_VOLUME = 1.0
 
 # === ПАРАМЕТРЫ ХРОМАКЕЯ ===
-CHROMA_COLOR = (255, 0, 255)
+CHROMA_COLOR = (0, 255, 0)
 CHROMA_TOLERANCE = 120
 CHROMA_EDGE_BLUR = 1
 
@@ -64,7 +64,7 @@ SUBTITLE_TEXT_COLOR = "#ffd400"
 SUBTITLE_STROKE_COLOR = "black"
 SUBTITLE_STROKE_WIDTH = 4
 SUBTITLE_PADDING = 0
-SUBTITLE_VERTICAL_OFFSET = 480  # Смещение субтитров: ~3/4 высоты для 1920px (можно менять)
+SUBTITLE_VERTICAL_OFFSET = 380  # Смещение суб3# титров: ~3/4 высоты для 1920px (можно менять)
 SUBTITLE_RENDERER = "moviepy"
 
 # ASS-стиль (если SUBTITLE_RENDERER = "ass")
@@ -75,7 +75,7 @@ ASS_ALIGNMENT = 2  # 2 = по центру снизу
 
 # === ПАРАМЕТРЫ РАСПОЛОЖЕНИЯ ===
 CLIP_VERTICAL_POSITION = 0.35  # Чуть выше центра
-BANNER_VERTICAL_POSITION = -700  # Позиция баннера по вертикали (px, можно отрицательная)
+BANNER_VERTICAL_POSITION = -300  # Позиция баннера по вертикали (px, можно отрицательная)
 
 # === WHISPER ===
 WHISPER_MODEL = "base"
