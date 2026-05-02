@@ -123,6 +123,27 @@ PROCESSING_MODES = {
         "background": False,
         "resize_clip": False,
     },
+    "6": {
+        "name": "Зеркало: фон 0.90 + видео 1.05 + баннер",
+        "type": "mirror_bg_and_clip",
+        "crop": False,
+        "banner": True,
+        "background": True,
+        "resize_clip": True,
+        "mirror_clip": True,
+        "clip_speed": 1.05,
+        "mirror_background": True,
+        "background_speed": 0.90,
+    },
+    "7": {
+        "name": "Зеркало: только видео + баннер",
+        "type": "mirror_clip_only",
+        "crop": True,
+        "banner": True,
+        "background": False,
+        "resize_clip": False,
+        "mirror_clip": True,
+    },
 }
 
 # === РЕНДЕР ===

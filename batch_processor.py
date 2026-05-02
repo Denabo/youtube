@@ -5,7 +5,7 @@ import os
 import shutil
 from pathlib import Path
 
-from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, CompositeAudioClip
+from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, CompositeAudioClip, vfx
 
 from config import *
 from chroma_key import chroma_key
@@ -75,6 +75,11 @@ class VideoProcessor:
             bg = bg.subclip(0, duration)
         return bg
 
+    def _apply_speed(self, clip, speed_factor):
+        if not speed_factor or abs(speed_factor - 1.0) < 1e-6:
+            return clip
+        return clip.fx(vfx.speedx, speed_factor)
+
     def _mode_universal(self, clip):
         """Универсальная сборка: фон/обрезка/уменьшение/баннер"""
         print(f"   🎬 Режим: {self.mode['name']}")
@@ -87,9 +92,18 @@ class VideoProcessor:
                 print(f"   🖼️  Фон: {bg_files[0].name}")
                 bg = VideoFileClip(str(bg_files[0])).without_audio()
                 bg = self._fit_background(bg, clip.duration)
+                bg = self._apply_speed(bg, self.mode.get("background_speed", 1.0))
+                if self.mode.get("mirror_background"):
+                    bg = bg.fx(vfx.mirror_x)
+                bg = bg.set_duration(clip.duration)
                 layers.append(bg)
             else:
                 print("   ⚠️  Фон не найден, пропускаем")
+
+        clip_to_use = self._apply_speed(clip_to_use, self.mode.get("clip_speed", 1.0))
+
+        if self.mode.get("mirror_clip"):
+            clip_to_use = clip_to_use.fx(vfx.mirror_x)
 
         if self.mode.get("crop"):
             print("   ✂️  Обрезаем под 9:16")
@@ -140,8 +154,8 @@ class VideoProcessor:
                 print("   ⚠️  Баннер не найден, пропускаем")
 
         video = CompositeVideoClip(layers, size=(self.frame_w, self.frame_h))
-        if clip.audio:
-            video = video.set_audio(clip.audio.volumex(VOICE_VOLUME))
+        if clip_to_use.audio:
+            video = video.set_audio(clip_to_use.audio.volumex(VOICE_VOLUME))
         return video
 
     def _add_music(self, video):
