@@ -172,6 +172,29 @@ class VideoProcessor:
 
         return CompositeVideoClip(layers, size=(self.frame_w, self.frame_h))
 
+    def _stylize_audio(self, audio_clip):
+        """Изменяет звук, чтобы он отличался от оригинала в зеркальных режимах."""
+        styled = audio_clip.fx(afx.audio_normalize)
+        styled = styled.fx(afx.audio_fadein, 0.05).fx(afx.audio_fadeout, 0.05)
+        styled = styled.set_fps(44100)
+        styled = styled.fx(vfx.speedx, 1.10)
+        styled = styled.set_fps(45423).set_fps(44100)
+        return styled.volumex(1.05)
+
+    def _add_music(self, video):
+        """Добавляет фоновую музыку к видео."""
+        music = AudioFileClip(self.music_path).volumex(DEFAULT_MUSIC_VOLUME)
+        if music.duration < video.duration:
+            music = music.audio_loop(duration=video.duration)
+        else:
+            music = music.subclip(0, video.duration)
+
+        if video.audio is None:
+            return video.set_audio(music)
+
+        mixed_audio = CompositeAudioClip([video.audio, music])
+        return video.set_audio(mixed_audio)
+
 
 
 class BatchProcessor:
