@@ -160,3 +160,25 @@ PROCESSING_MODES = {
 RENDER_PRESET = "medium"
 RENDER_BITRATE = "8000k"
 RENDER_THREADS = 4
+
+
+# === НАСТРОЙКИ ЗЕРКАЛЬНЫХ ЭФФЕКТОВ ===
+MIRROR_EFFECTS = {
+    "bg_blur_radius": 18,
+    "main_crop_ratio": 0.94,
+    "color_gain": 1.25,
+    "lum": 12,
+    "contrast": 38,
+    "brightness_mul": 1.22,
+    "brightness_add": 14.0,
+    "red_mul": 1.18,
+    "green_mul": 1.22,
+    "blue_mul": 0.82,
+    "noise_strength": 8.0,
+    "smile_size_ratio": 0.06,
+    "smile_count": 4,
+    "smile_alpha": 210,
+    "audio_speed": 1.10,
+    "audio_pitch_rate": 45423,
+    "audio_volume_boost": 1.05,
+}

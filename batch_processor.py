@@ -90,14 +90,16 @@ class VideoProcessor:
 
     def _blur_frame(self, frame):
         img = Image.fromarray(frame)
-        return np.array(img.filter(ImageFilter.GaussianBlur(radius=18)))
+        return np.array(img.filter(ImageFilter.GaussianBlur(radius=MIRROR_EFFECTS["bg_blur_radius"])))
 
     def _light_video_tuning(self, frame):
         arr = frame.astype(np.float32)
-        arr = arr * 1.22 + 14.0
-        arr[..., 0] *= 1.18
-        arr[..., 1] *= 1.22
-        arr[..., 2] *= 0.82
+        arr = arr * MIRROR_EFFECTS["brightness_mul"] + MIRROR_EFFECTS["brightness_add"]
+        arr[..., 0] *= MIRROR_EFFECTS["red_mul"]
+        arr[..., 1] *= MIRROR_EFFECTS["green_mul"]
+        arr[..., 2] *= MIRROR_EFFECTS["blue_mul"]
+        noise = np.random.normal(0, MIRROR_EFFECTS["noise_strength"], arr.shape)
+        arr += noise
         arr = np.clip(arr, 0, 255)
         return arr.astype(np.uint8)
 
@@ -105,24 +107,26 @@ class VideoProcessor:
         img = Image.fromarray(frame)
         draw = ImageDraw.Draw(img, "RGBA")
         w, h = img.size
-        size = max(24, int(min(w, h) * 0.035))
-        step = max(size * 2, 110)
+        size = max(34, int(min(w, h) * MIRROR_EFFECTS["smile_size_ratio"]))
+        count = max(1, int(MIRROR_EFFECTS["smile_count"]))
         phase = (t / max(duration, 0.001)) * 6.283
+        alpha = int(MIRROR_EFFECTS["smile_alpha"])
 
-        for y in range(size, h - size, step):
-            for x in [size + int(10 * np.sin(phase + y * 0.01)), w - size - int(10 * np.cos(phase + y * 0.01))]:
-                draw.ellipse((x - size, y - size, x + size, y + size), fill=(255, 240, 0, 190), outline=(20, 20, 20, 220), width=3)
-                eye = max(2, size // 8)
-                draw.ellipse((x - size//3 - eye, y - size//4 - eye, x - size//3 + eye, y - size//4 + eye), fill=(0, 0, 0, 220))
-                draw.ellipse((x + size//3 - eye, y - size//4 - eye, x + size//3 + eye, y - size//4 + eye), fill=(0, 0, 0, 220))
-                draw.arc((x - size//2, y - size//5, x + size//2, y + size//2), 15, 165, fill=(0, 0, 0, 220), width=3)
+        for i in range(count):
+            x = int((i + 1) * w / (count + 1) + 24 * np.sin(phase + i))
+            y = int(size * 1.3 + 12 * np.cos(phase * 1.4 + i))
+            draw.ellipse((x - size, y - size, x + size, y + size), fill=(255, 240, 0, alpha), outline=(20, 20, 20, alpha), width=4)
+            eye = max(3, size // 7)
+            draw.ellipse((x - size//3 - eye, y - size//4 - eye, x - size//3 + eye, y - size//4 + eye), fill=(0, 0, 0, alpha))
+            draw.ellipse((x + size//3 - eye, y - size//4 - eye, x + size//3 + eye, y - size//4 + eye), fill=(0, 0, 0, alpha))
+            draw.arc((x - size//2, y - size//5, x + size//2, y + size//2), 15, 165, fill=(0, 0, 0, alpha), width=4)
 
         return np.array(img)
 
     def _apply_heavy_visual_effects(self, clip):
-        clip = clip.fx(vfx.crop, x_center=clip.w / 2, y_center=clip.h / 2, width=int(clip.w * 0.94), height=int(clip.h * 0.94))
+        clip = clip.fx(vfx.crop, x_center=clip.w / 2, y_center=clip.h / 2, width=int(clip.w * MIRROR_EFFECTS["main_crop_ratio"]), height=int(clip.h * MIRROR_EFFECTS["main_crop_ratio"]))
         clip = clip.fl_image(self._light_video_tuning)
-        clip = clip.fx(vfx.colorx, 1.25).fx(vfx.lum_contrast, lum=12, contrast=38, contrast_thr=127)
+        clip = clip.fx(vfx.colorx, MIRROR_EFFECTS["color_gain"]).fx(vfx.lum_contrast, lum=MIRROR_EFFECTS["lum"], contrast=MIRROR_EFFECTS["contrast"], contrast_thr=127)
         clip = clip.fl(lambda gf, tt: self._draw_edge_smiles(gf(tt), tt, clip.duration))
         return clip
 
@@ -201,9 +205,9 @@ class VideoProcessor:
         styled = audio_clip.fx(afx.audio_normalize)
         styled = styled.fx(afx.audio_fadein, 0.05).fx(afx.audio_fadeout, 0.05)
         styled = styled.set_fps(44100)
-        styled = styled.fx(vfx.speedx, 1.10)
-        styled = styled.set_fps(45423).set_fps(44100)
-        return styled.volumex(1.05)
+        styled = styled.fx(vfx.speedx, MIRROR_EFFECTS["audio_speed"])
+        styled = styled.set_fps(MIRROR_EFFECTS["audio_pitch_rate"]).set_fps(44100)
+        return styled.volumex(MIRROR_EFFECTS["audio_volume_boost"])
 
     def _add_music(self, video):
         """Добавляет фоновую музыку к видео."""
