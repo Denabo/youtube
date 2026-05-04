@@ -192,23 +192,36 @@ class VideoProcessor:
                 "[voc][mus]amix=inputs=2:duration=first[aout]"
             )
         else:
-            filter_complex = f"[1:a]{audio_chain}[aout]"
+            filter_complex = f"[1:a]{audio_chain},volume=1.0[aout]"
 
         cmd += [
-            "-filter_complex",
-            filter_complex,
-            "-map",
-            "0:v:0",
-            "-map",
-            "[aout]",
-            "-c:v",
-            "copy",
-            "-c:a",
-            "aac",
+            "-filter_complex", filter_complex,
+            "-map", "0:v:0",
+            "-map", "[aout]",
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-movflags", "+faststart",
             "-shortest",
             output_path,
         ]
-        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+            print("   ⚠️  ffmpeg-фильтры аудио не применились, используем резервный звук")
+            fallback_cmd = [
+                "ffmpeg", "-y",
+                "-i", rendered_video_path,
+                "-i", self.clip_path,
+                "-map", "0:v:0",
+                "-map", "1:a:0",
+                "-af", "atempo=1.10,volume=1.03",
+                "-c:v", "copy",
+                "-c:a", "aac",
+                "-shortest",
+                output_path,
+            ]
+            subprocess.run(fallback_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def _add_music(self, video):
         music = AudioFileClip(self.music_path).volumex(DEFAULT_MUSIC_VOLUME)
