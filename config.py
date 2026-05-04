@@ -144,6 +144,16 @@ PROCESSING_MODES = {
         "resize_clip": False,
         "mirror_clip": True,
     },
+    "8": {
+        "name": "Зеркало: видео + blur сверху/снизу из исходника + баннер",
+        "type": "mirror_blur_bars",
+        "crop": False,
+        "banner": True,
+        "background": False,
+        "resize_clip": False,
+        "mirror_clip": True,
+        "clip_speed": 1.10,
+    },
 }
 
 # === РЕНДЕР ===

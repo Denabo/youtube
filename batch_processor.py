@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageFilter
-from moviepy.editor import VideoFileClip, CompositeVideoClip, vfx
+from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, CompositeAudioClip, vfx
 
 from config import *
 from chroma_key import chroma_key
@@ -46,15 +46,21 @@ class VideoProcessor:
 
         temp_output = output_path
         final_output = output_path
-        needs_audio_post = self.mode.get("type") in {"mirror_bg_and_clip", "mirror_clip_only"}
+        needs_audio_post = self.mode.get("type") in {"mirror_bg_and_clip", "mirror_clip_only", "mirror_blur_bars"}
         if needs_audio_post:
             temp_output = str(Path(output_path).with_suffix(".tmp_video.mp4"))
+
+        if (not needs_audio_post) and clip.audio:
+            video = video.set_audio(clip.audio.volumex(VOICE_VOLUME))
+            if self.music_path and os.path.exists(self.music_path):
+                video = self._add_music(video)
 
         print("   💾 Рендер видео...")
         video.write_videofile(
             temp_output,
             codec="libx264",
-            audio=False,
+            audio=not needs_audio_post,
+            audio_codec="aac" if not needs_audio_post else None,
             fps=profile["fps"],
             threads=RENDER_THREADS,
             preset=RENDER_PRESET,
@@ -108,8 +114,9 @@ class VideoProcessor:
         layers = []
         clip_to_use = clip
 
-        if self.mode.get("type") == "mirror_bg_and_clip":
-            bg = self._apply_speed(clip.without_audio(), 0.90).fx(vfx.mirror_x)
+        if self.mode.get("type") in {"mirror_bg_and_clip", "mirror_blur_bars"}:
+            bg_speed = 0.90 if self.mode.get("type") == "mirror_bg_and_clip" else 1.10
+            bg = self._apply_speed(clip.without_audio(), bg_speed).fx(vfx.mirror_x)
             bg = self._fit_background(bg, clip.duration)
             bg = bg.fl_image(self._blur_frame).set_duration(clip.duration)
             layers.append(bg)
@@ -124,7 +131,7 @@ class VideoProcessor:
                 print("   ⚠️  Фон не найден, пропускаем")
 
         clip_speed = self.mode.get("clip_speed", 1.0)
-        if self.mode.get("type") in {"mirror_bg_and_clip", "mirror_clip_only"}:
+        if self.mode.get("type") in {"mirror_bg_and_clip", "mirror_clip_only", "mirror_blur_bars"}:
             clip_speed = 1.10
 
         clip_to_use = self._apply_speed(clip_to_use, clip_speed)
@@ -132,7 +139,7 @@ class VideoProcessor:
         if self.mode.get("mirror_clip"):
             clip_to_use = clip_to_use.fx(vfx.mirror_x)
 
-        if self.mode.get("type") in {"mirror_bg_and_clip", "mirror_clip_only"}:
+        if self.mode.get("type") in {"mirror_bg_and_clip", "mirror_clip_only", "mirror_blur_bars"}:
             clip_to_use = clip_to_use.fx(vfx.crop, x_center=clip_to_use.w / 2, y_center=clip_to_use.h / 2, width=int(clip_to_use.w * 0.98), height=int(clip_to_use.h * 0.98))
             clip_to_use = clip_to_use.fl_image(self._light_video_tuning)
 
@@ -142,7 +149,12 @@ class VideoProcessor:
                 x_center = clip_to_use.w / 2
                 clip_to_use = clip_to_use.crop(x1=x_center - self.frame_w / 2, y1=0, x2=x_center + self.frame_w / 2, y2=self.frame_h)
 
-        if self.mode.get("resize_clip"):
+        if self.mode.get("type") == "mirror_blur_bars":
+            clip_to_use = clip_to_use.resize(width=self.frame_w)
+            if clip_to_use.h > self.frame_h:
+                clip_to_use = clip_to_use.resize(height=self.frame_h)
+            clip_to_use = clip_to_use.set_position(("center", "center"))
+        elif self.mode.get("resize_clip"):
             clip_to_use = clip_to_use.resize(width=self.frame_w)
             max_height = self.frame_h * 0.6
             if clip_to_use.h > max_height:
@@ -197,6 +209,18 @@ class VideoProcessor:
             output_path,
         ]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    def _add_music(self, video):
+        music = AudioFileClip(self.music_path).volumex(DEFAULT_MUSIC_VOLUME)
+        if music.duration < video.duration:
+            music = music.audio_loop(duration=video.duration)
+        else:
+            music = music.subclip(0, video.duration)
+        base_audio = video.audio if video.audio is not None else None
+        if base_audio is None:
+            return video.set_audio(music)
+        mixed_audio = CompositeAudioClip([base_audio, music])
+        return video.set_audio(mixed_audio)
 
 
 class BatchProcessor:
