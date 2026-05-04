@@ -131,7 +131,7 @@ PROCESSING_MODES = {
         "background": True,
         "resize_clip": True,
         "mirror_clip": True,
-        "clip_speed": 1.05,
+        "clip_speed": 1.10,
         "mirror_background": True,
         "background_speed": 0.90,
     },
