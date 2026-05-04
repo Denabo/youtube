@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, ImageDraw
 from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, CompositeAudioClip, vfx, afx
 
 from config import *
@@ -94,12 +94,37 @@ class VideoProcessor:
 
     def _light_video_tuning(self, frame):
         arr = frame.astype(np.float32)
-        arr = arr * 1.10 + 8.0
-        arr[..., 0] *= 1.05
-        arr[..., 1] *= 1.08
-        arr[..., 2] *= 0.95
+        arr = arr * 1.22 + 14.0
+        arr[..., 0] *= 1.18
+        arr[..., 1] *= 1.22
+        arr[..., 2] *= 0.82
         arr = np.clip(arr, 0, 255)
         return arr.astype(np.uint8)
+
+    def _draw_edge_smiles(self, frame, t, duration):
+        img = Image.fromarray(frame)
+        draw = ImageDraw.Draw(img, "RGBA")
+        w, h = img.size
+        size = max(24, int(min(w, h) * 0.035))
+        step = max(size * 2, 110)
+        phase = (t / max(duration, 0.001)) * 6.283
+
+        for y in range(size, h - size, step):
+            for x in [size + int(10 * np.sin(phase + y * 0.01)), w - size - int(10 * np.cos(phase + y * 0.01))]:
+                draw.ellipse((x - size, y - size, x + size, y + size), fill=(255, 240, 0, 190), outline=(20, 20, 20, 220), width=3)
+                eye = max(2, size // 8)
+                draw.ellipse((x - size//3 - eye, y - size//4 - eye, x - size//3 + eye, y - size//4 + eye), fill=(0, 0, 0, 220))
+                draw.ellipse((x + size//3 - eye, y - size//4 - eye, x + size//3 + eye, y - size//4 + eye), fill=(0, 0, 0, 220))
+                draw.arc((x - size//2, y - size//5, x + size//2, y + size//2), 15, 165, fill=(0, 0, 0, 220), width=3)
+
+        return np.array(img)
+
+    def _apply_heavy_visual_effects(self, clip):
+        clip = clip.fx(vfx.crop, x_center=clip.w / 2, y_center=clip.h / 2, width=int(clip.w * 0.94), height=int(clip.h * 0.94))
+        clip = clip.fl_image(self._light_video_tuning)
+        clip = clip.fx(vfx.colorx, 1.25).fx(vfx.lum_contrast, lum=12, contrast=38, contrast_thr=127)
+        clip = clip.fl(lambda gf, tt: self._draw_edge_smiles(gf(tt), tt, clip.duration))
+        return clip
 
     def _mode_universal(self, clip):
         print(f"   🎬 Режим: {self.mode['name']}")
@@ -132,8 +157,7 @@ class VideoProcessor:
             clip_to_use = clip_to_use.fx(vfx.mirror_x)
 
         if self.mode.get("type") in {"mirror_bg_and_clip", "mirror_clip_only", "mirror_blur_bars"}:
-            clip_to_use = clip_to_use.fx(vfx.crop, x_center=clip_to_use.w / 2, y_center=clip_to_use.h / 2, width=int(clip_to_use.w * 0.98), height=int(clip_to_use.h * 0.98))
-            clip_to_use = clip_to_use.fl_image(self._light_video_tuning)
+            clip_to_use = self._apply_heavy_visual_effects(clip_to_use)
 
         if self.mode.get("crop"):
             clip_to_use = clip_to_use.resize(height=self.frame_h)
