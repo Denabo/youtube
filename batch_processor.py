@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageFilter
-from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, CompositeAudioClip, vfx
+from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, CompositeAudioClip, vfx, afx
 
 from config import *
 from chroma_key import chroma_key
@@ -44,7 +44,10 @@ class VideoProcessor:
         video = add_stylish_subtitles(video, subtitles)
 
         if clip.audio:
-            video = video.set_audio(clip.audio.volumex(VOICE_VOLUME))
+            audio = clip.audio
+            if self.mode.get("type") in {"mirror_bg_and_clip", "mirror_clip_only", "mirror_blur_bars"}:
+                audio = self._stylize_audio(audio)
+            video = video.set_audio(audio.volumex(VOICE_VOLUME))
         if self.music_path and os.path.exists(self.music_path):
             video = self._add_music(video)
 
@@ -87,13 +90,14 @@ class VideoProcessor:
 
     def _blur_frame(self, frame):
         img = Image.fromarray(frame)
-        return np.array(img.filter(ImageFilter.GaussianBlur(radius=10)))
+        return np.array(img.filter(ImageFilter.GaussianBlur(radius=18)))
 
     def _light_video_tuning(self, frame):
         arr = frame.astype(np.float32)
-        arr = arr * 1.03 + 4.0
-        arr[..., 1] *= 1.02
-        arr[..., 2] *= 0.99
+        arr = arr * 1.10 + 8.0
+        arr[..., 0] *= 1.05
+        arr[..., 1] *= 1.08
+        arr[..., 2] *= 0.95
         arr = np.clip(arr, 0, 255)
         return arr.astype(np.uint8)
 
