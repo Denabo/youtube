@@ -3,7 +3,6 @@
 """
 import os
 import shutil
-import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -44,33 +43,22 @@ class VideoProcessor:
         subtitles = generate_subtitles(self.clip_path)
         video = add_stylish_subtitles(video, subtitles)
 
-        temp_output = output_path
-        final_output = output_path
-        needs_audio_post = self.mode.get("type") in {"mirror_bg_and_clip", "mirror_clip_only", "mirror_blur_bars"}
-        if needs_audio_post:
-            temp_output = str(Path(output_path).with_suffix(".tmp_video.mp4"))
-
-        if (not needs_audio_post) and clip.audio:
+        if clip.audio:
             video = video.set_audio(clip.audio.volumex(VOICE_VOLUME))
-            if self.music_path and os.path.exists(self.music_path):
-                video = self._add_music(video)
+        if self.music_path and os.path.exists(self.music_path):
+            video = self._add_music(video)
 
         print("   💾 Рендер видео...")
         video.write_videofile(
-            temp_output,
+            output_path,
             codec="libx264",
-            audio=not needs_audio_post,
-            audio_codec="aac" if not needs_audio_post else None,
+            audio_codec="aac",
             fps=profile["fps"],
             threads=RENDER_THREADS,
             preset=RENDER_PRESET,
             bitrate=RENDER_BITRATE,
             logger=None,
         )
-
-        if needs_audio_post:
-            self._attach_filtered_audio(temp_output, final_output)
-            Path(temp_output).unlink(missing_ok=True)
 
         clip.close()
         video.close()
@@ -180,60 +168,6 @@ class VideoProcessor:
 
         return CompositeVideoClip(layers, size=(self.frame_w, self.frame_h))
 
-    def _attach_filtered_audio(self, rendered_video_path, output_path):
-        audio_chain = "atempo=1.10,asetrate=44100*1.03,aresample=44100,highpass=f=120,lowpass=f=9000"
-        cmd = ["ffmpeg", "-y", "-i", rendered_video_path, "-i", self.clip_path]
-
-        if self.music_path and os.path.exists(self.music_path):
-            cmd += ["-i", self.music_path]
-            filter_complex = (
-                f"[1:a]{audio_chain},volume=1.0[voc];"
-                "[2:a]volume=0.05623413251903491,aresample=44100[mus];"
-                "[voc][mus]amix=inputs=2:duration=first[aout]"
-            )
-        else:
-            filter_complex = f"[1:a]{audio_chain},volume=1.0[aout]"
-
-        cmd += [
-            "-filter_complex", filter_complex,
-            "-map", "0:v:0",
-            "-map", "[aout]",
-            "-c:v", "copy",
-            "-c:a", "aac",
-            "-movflags", "+faststart",
-            "-shortest",
-            output_path,
-        ]
-
-        try:
-            subprocess.run(cmd, check=True, capture_output=True, text=True)
-        except subprocess.CalledProcessError as e:
-            print("   ⚠️  ffmpeg-фильтры аудио не применились, используем резервный звук")
-            fallback_cmd = [
-                "ffmpeg", "-y",
-                "-i", rendered_video_path,
-                "-i", self.clip_path,
-                "-map", "0:v:0",
-                "-map", "1:a:0",
-                "-af", "atempo=1.10,volume=1.03",
-                "-c:v", "copy",
-                "-c:a", "aac",
-                "-shortest",
-                output_path,
-            ]
-            subprocess.run(fallback_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-    def _add_music(self, video):
-        music = AudioFileClip(self.music_path).volumex(DEFAULT_MUSIC_VOLUME)
-        if music.duration < video.duration:
-            music = music.audio_loop(duration=video.duration)
-        else:
-            music = music.subclip(0, video.duration)
-        base_audio = video.audio if video.audio is not None else None
-        if base_audio is None:
-            return video.set_audio(music)
-        mixed_audio = CompositeAudioClip([base_audio, music])
-        return video.set_audio(mixed_audio)
 
 
 class BatchProcessor:
