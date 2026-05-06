@@ -166,7 +166,7 @@ RENDER_THREADS = 4
 MIRROR_EFFECTS = {
     "bg_blur_radius": 10,
     "main_crop_ratio": 0.98,
-    "zoom_ratio": 0.6,
+    "zoom_ratio": 0.7,
     "color_gain": 1.0,
     "lum": 0,
     "contrast": 0,
