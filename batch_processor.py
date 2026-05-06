@@ -136,7 +136,7 @@ class VideoProcessor:
         clip_to_use = clip
 
         if self.mode.get("type") in {"mirror_bg_and_clip", "mirror_blur_bars"}:
-            bg_speed = 0.90 if self.mode.get("type") == "mirror_bg_and_clip" else 1.10
+            bg_speed = self.mode.get("background_speed", MIRROR_EFFECTS["audio_speed"])
             bg = self._apply_speed(clip.without_audio(), bg_speed).fx(vfx.mirror_x)
             bg = self._fit_background(bg, clip.duration)
             bg = bg.fl_image(self._blur_frame).set_duration(clip.duration)
@@ -176,7 +176,7 @@ class VideoProcessor:
             clip_to_use = clip_to_use.set_position(("center", "center"))
         elif self.mode.get("resize_clip"):
             clip_to_use = clip_to_use.resize(width=self.frame_w)
-            max_height = self.frame_h * 0.6
+            max_height = self.frame_h * MIRROR_EFFECTS["zoom_ratio"]
             if clip_to_use.h > max_height:
                 clip_to_use = clip_to_use.resize(height=max_height)
             y_position = int(self.frame_h * CLIP_VERTICAL_POSITION)
