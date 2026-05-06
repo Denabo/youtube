@@ -165,7 +165,7 @@ RENDER_THREADS = 4
 # === НАСТРОЙКИ ЗЕРКАЛЬНЫХ ЭФФЕКТОВ ===
 MIRROR_EFFECTS = {
     "bg_blur_radius": 10,
-    "main_crop_ratio": 0.98,
+    "main_crop_ratio": 0.70,
     "zoom_ratio": 0.7,
     "color_gain": 1.0,
     "lum": 0,
