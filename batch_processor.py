@@ -139,6 +139,9 @@ class VideoProcessor:
 
     def _mode_center_square_custom(self, clip):
         layers = []
+        top_margin = 24
+        bottom_height = int(self.frame_h * 0.28)
+        banner_height = int(self.frame_h * 0.16)
 
         static_files = []
         for ext in ("*.png", "*.jpg", "*.jpeg", "*.webp"):
@@ -159,14 +162,26 @@ class VideoProcessor:
         bg_files = list(Path(INPUT_BACKGROUNDS_DIR).glob("*.mp4"))
         if bg_files:
             bottom_bg = VideoFileClip(str(bg_files[0])).without_audio()
-            bottom_bg = self._fit_background(bottom_bg, clip.duration)
-            bottom_height = int(self.frame_h * 0.36)
-            bottom_bg = bottom_bg.resize(width=self.frame_w, height=bottom_height)
+            if bottom_bg.duration < clip.duration:
+                bottom_bg = bottom_bg.loop(duration=clip.duration)
+            else:
+                bottom_bg = bottom_bg.subclip(0, clip.duration)
+            bottom_bg = bottom_bg.resize(width=self.frame_w)
+            if bottom_bg.h < bottom_height:
+                bottom_bg = bottom_bg.resize(height=bottom_height)
+            bottom_bg = bottom_bg.crop(x_center=bottom_bg.w / 2, y_center=bottom_bg.h / 2, width=self.frame_w, height=bottom_height)
             bottom_bg = bottom_bg.set_position(("center", self.frame_h - bottom_height))
             layers.append(bottom_bg)
 
         square_size = int(self.frame_w * 0.82)
         center_clip = clip.fx(vfx.mirror_x).without_audio()
+        pre_crop_width = int(center_clip.w * 0.78)
+        center_clip = center_clip.crop(
+            x_center=center_clip.w / 2,
+            y_center=center_clip.h / 2,
+            width=pre_crop_width,
+            height=center_clip.h,
+        )
         center_clip = center_clip.resize(height=square_size)
         if center_clip.w < square_size:
             center_clip = center_clip.resize(width=square_size)
@@ -186,9 +201,11 @@ class VideoProcessor:
             self._rounded_rect_mask(square_size + 26, square_size + 26, radius + 12),
             ismask=True,
         ).set_duration(clip.duration)
-        border = border.set_mask(border_mask).set_position(("center", "center"))
+        video_block_top = top_margin + banner_height + 46
+        video_y = min(video_block_top, self.frame_h - bottom_height - square_size - 30)
+        border = border.set_mask(border_mask).set_position(("center", video_y - 13))
 
-        center_clip = center_clip.set_position(("center", "center"))
+        center_clip = center_clip.set_position(("center", video_y))
         layers.append(border)
         layers.append(center_clip)
 
@@ -197,7 +214,8 @@ class VideoProcessor:
             if banner_files:
                 banner = VideoFileClip(str(banner_files[0])).without_audio()
                 banner = banner.loop(duration=clip.duration) if banner.duration < clip.duration else banner.subclip(0, clip.duration)
-                banner = chroma_key(banner).set_duration(clip.duration).set_position(("center", 20))
+                banner = chroma_key(banner).set_duration(clip.duration)
+                banner = banner.resize(height=banner_height).set_position(("center", top_margin))
                 layers.append(banner)
 
         composed = CompositeVideoClip(layers, size=(self.frame_w, self.frame_h))
