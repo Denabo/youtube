@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageFilter, ImageDraw
-from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, CompositeAudioClip, vfx, afx
+from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, CompositeAudioClip, ImageClip, ColorClip, vfx, afx
 
 from config import *
 from chroma_key import chroma_key
@@ -130,8 +130,84 @@ class VideoProcessor:
         clip = clip.fl(lambda gf, tt: self._draw_edge_smiles(gf(tt), tt, clip.duration))
         return clip
 
+    def _rounded_rect_mask(self, width, height, radius):
+        mask_img = Image.new("L", (width, height), 0)
+        draw = ImageDraw.Draw(mask_img)
+        draw.rounded_rectangle((0, 0, width, height), radius=radius, fill=255)
+        mask_np = np.array(mask_img).astype(np.float32) / 255.0
+        return mask_np
+
+    def _mode_center_square_custom(self, clip):
+        layers = []
+
+        static_files = []
+        for ext in ("*.png", "*.jpg", "*.jpeg", "*.webp"):
+            static_files.extend(Path(INPUT_STATIC_BACKGROUNDS_DIR).glob(ext))
+        if static_files:
+            static_bg = ImageClip(str(static_files[0])).set_duration(clip.duration)
+            static_bg = static_bg.resize(height=self.frame_h)
+            if static_bg.w < self.frame_w:
+                static_bg = static_bg.resize(width=self.frame_w)
+            static_bg = static_bg.crop(
+                x_center=static_bg.w / 2,
+                y_center=static_bg.h / 2,
+                width=self.frame_w,
+                height=self.frame_h,
+            )
+            layers.append(static_bg)
+
+        bg_files = list(Path(INPUT_BACKGROUNDS_DIR).glob("*.mp4"))
+        if bg_files:
+            bottom_bg = VideoFileClip(str(bg_files[0])).without_audio()
+            bottom_bg = self._fit_background(bottom_bg, clip.duration)
+            bottom_height = int(self.frame_h * 0.36)
+            bottom_bg = bottom_bg.resize(width=self.frame_w, height=bottom_height)
+            bottom_bg = bottom_bg.set_position(("center", self.frame_h - bottom_height))
+            layers.append(bottom_bg)
+
+        square_size = int(self.frame_w * 0.82)
+        center_clip = clip.fx(vfx.mirror_x).without_audio()
+        center_clip = center_clip.resize(height=square_size)
+        if center_clip.w < square_size:
+            center_clip = center_clip.resize(width=square_size)
+        center_clip = center_clip.crop(
+            x_center=center_clip.w / 2,
+            y_center=center_clip.h / 2,
+            width=square_size,
+            height=square_size,
+        )
+
+        radius = int(square_size * 0.08)
+        mask = ImageClip(self._rounded_rect_mask(square_size, square_size, radius), ismask=True).set_duration(clip.duration)
+        center_clip = center_clip.set_mask(mask)
+
+        border = ColorClip(size=(square_size + 26, square_size + 26), color=(255, 255, 255), duration=clip.duration)
+        border_mask = ImageClip(
+            self._rounded_rect_mask(square_size + 26, square_size + 26, radius + 12),
+            ismask=True,
+        ).set_duration(clip.duration)
+        border = border.set_mask(border_mask).set_position(("center", "center"))
+
+        center_clip = center_clip.set_position(("center", "center"))
+        layers.append(border)
+        layers.append(center_clip)
+
+        if self.mode.get("banner"):
+            banner_files = list(Path(INPUT_BANNERS_DIR).glob("*.mp4"))
+            if banner_files:
+                banner = VideoFileClip(str(banner_files[0])).without_audio()
+                banner = banner.loop(duration=clip.duration) if banner.duration < clip.duration else banner.subclip(0, clip.duration)
+                banner = chroma_key(banner).set_duration(clip.duration).set_position(("center", 20))
+                layers.append(banner)
+
+        composed = CompositeVideoClip(layers, size=(self.frame_w, self.frame_h))
+        return composed.fl(lambda gf, tt: self._draw_edge_smiles(gf(tt), tt, clip.duration))
+
     def _mode_universal(self, clip):
         print(f"   🎬 Режим: {self.mode['name']}")
+        if self.mode.get("type") == "center_square_custom":
+            return self._mode_center_square_custom(clip)
+
         layers = []
         clip_to_use = clip
 
