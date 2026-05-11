@@ -140,12 +140,13 @@ class VideoProcessor:
     def _mode_center_square_custom(self, clip):
         layers = []
         top_margin = 24
-        bottom_height = int(self.frame_h * 0.28)
-        banner_height = int(self.frame_h * 0.16)
+        bottom_height = int(self.frame_h * 0.24)
+        banner_height = int(self.frame_h * 0.19)
 
-        static_files = []
-        for ext in ("*.png", "*.jpg", "*.jpeg", "*.webp"):
-            static_files.extend(Path(INPUT_STATIC_BACKGROUNDS_DIR).glob(ext))
+        static_files = [
+            p for p in Path(INPUT_STATIC_BACKGROUNDS_DIR).iterdir()
+            if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}
+        ]
         if static_files:
             static_bg = ImageClip(str(static_files[0])).set_duration(clip.duration)
             static_bg = static_bg.resize(height=self.frame_h)
@@ -158,6 +159,8 @@ class VideoProcessor:
                 height=self.frame_h,
             )
             layers.append(static_bg)
+        else:
+            print(f"   ⚠️  Статичный PNG/JPG фон не найден в: {INPUT_STATIC_BACKGROUNDS_DIR}")
 
         bg_files = list(Path(INPUT_BACKGROUNDS_DIR).glob("*.mp4"))
         if bg_files:
@@ -173,7 +176,8 @@ class VideoProcessor:
             bottom_bg = bottom_bg.set_position(("center", self.frame_h - bottom_height))
             layers.append(bottom_bg)
 
-        square_size = int(self.frame_w * 0.82)
+        square_size = int(self.frame_w * 0.74)
+        center_height = int(square_size * 0.88)
         center_clip = clip.fx(vfx.mirror_x).without_audio()
         pre_crop_width = int(center_clip.w * 0.78)
         center_clip = center_clip.crop(
@@ -189,20 +193,20 @@ class VideoProcessor:
             x_center=center_clip.w / 2,
             y_center=center_clip.h / 2,
             width=square_size,
-            height=square_size,
+            height=center_height,
         )
 
-        radius = int(square_size * 0.08)
-        mask = ImageClip(self._rounded_rect_mask(square_size, square_size, radius), ismask=True).set_duration(clip.duration)
+        radius = int(center_height * 0.1)
+        mask = ImageClip(self._rounded_rect_mask(square_size, center_height, radius), ismask=True).set_duration(clip.duration)
         center_clip = center_clip.set_mask(mask)
 
-        border = ColorClip(size=(square_size + 26, square_size + 26), color=(255, 255, 255), duration=clip.duration)
+        border = ColorClip(size=(square_size + 26, center_height + 26), color=(255, 255, 255), duration=clip.duration)
         border_mask = ImageClip(
-            self._rounded_rect_mask(square_size + 26, square_size + 26, radius + 12),
+            self._rounded_rect_mask(square_size + 26, center_height + 26, radius + 12),
             ismask=True,
         ).set_duration(clip.duration)
         video_block_top = top_margin + banner_height + 46
-        video_y = min(video_block_top, self.frame_h - bottom_height - square_size - 30)
+        video_y = min(video_block_top, self.frame_h - bottom_height - center_height - 30)
         border = border.set_mask(border_mask).set_position(("center", video_y - 13))
 
         center_clip = center_clip.set_position(("center", video_y))
