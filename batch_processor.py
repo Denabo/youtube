@@ -124,7 +124,7 @@ class VideoProcessor:
         return np.array(img)
 
     def _apply_heavy_visual_effects(self, clip):
-        clip = clip.fx(vfx.crop, x_center=clip.w / 2, y_center=clip.h / 2, width=int(clip.w * MIRROR_EFFECTS["main_crop_ratio"]), height=int(clip.h * MIRROR_EFFECTS["main_crop_ratio"]))
+        clip = clip.fx(vfx.crop, x_center=clip.w / 2, y_center=clip.h / 2, width=int(clip.w * CENTER_ZOOM_CROP), height=int(clip.h * CENTER_ZOOM_CROP))
         clip = clip.fl_image(self._light_video_tuning)
         clip = clip.fx(vfx.colorx, MIRROR_EFFECTS["color_gain"]).fx(vfx.lum_contrast, lum=MIRROR_EFFECTS["lum"], contrast=MIRROR_EFFECTS["contrast"], contrast_thr=127)
         clip = clip.fl(lambda gf, tt: self._draw_edge_smiles(gf(tt), tt, clip.duration))

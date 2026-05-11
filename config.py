@@ -163,9 +163,12 @@ RENDER_THREADS = 4
 
 
 # === НАСТРОЙКИ ЗЕРКАЛЬНЫХ ЭФФЕКТОВ ===
+# Сильная центральная обрезка (зум): меньше значение = сильнее приближение
+CENTER_ZOOM_CROP = 0.70
+
 MIRROR_EFFECTS = {
     "bg_blur_radius": 10,
-    "main_crop_ratio": 0.70,
+    "main_crop_ratio": CENTER_ZOOM_CROP,
     "zoom_ratio": 0.7,
     "color_gain": 1.0,
     "lum": 0,
