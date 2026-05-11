@@ -123,9 +123,66 @@ PROCESSING_MODES = {
         "background": False,
         "resize_clip": False,
     },
+    "6": {
+        "name": "Зеркало: фон 0.90 + видео 1.05 + баннер",
+        "type": "mirror_bg_and_clip",
+        "crop": False,
+        "banner": True,
+        "background": True,
+        "resize_clip": True,
+        "mirror_clip": True,
+        "clip_speed": 1.10,
+        "mirror_background": True,
+        "background_speed": 1.10,
+    },
+    "7": {
+        "name": "Зеркало: только видео + баннер",
+        "type": "mirror_clip_only",
+        "crop": True,
+        "banner": True,
+        "background": False,
+        "resize_clip": False,
+        "mirror_clip": True,
+    },
+    "8": {
+        "name": "Зеркало: видео + blur сверху/снизу из исходника + баннер",
+        "type": "mirror_blur_bars",
+        "crop": False,
+        "banner": True,
+        "background": False,
+        "resize_clip": False,
+        "mirror_clip": True,
+        "clip_speed": 1.10,
+    },
 }
 
 # === РЕНДЕР ===
 RENDER_PRESET = "medium"
 RENDER_BITRATE = "8000k"
 RENDER_THREADS = 4
+
+
+# === НАСТРОЙКИ ЗЕРКАЛЬНЫХ ЭФФЕКТОВ ===
+# Сильная центральная обрезка (зум): меньше значение = сильнее приближение
+CENTER_ZOOM_CROP = 0.70
+
+MIRROR_EFFECTS = {
+    "bg_blur_radius": 10,
+    "main_crop_ratio": CENTER_ZOOM_CROP,
+    "zoom_ratio": 0.7,
+    "color_gain": 1.0,
+    "lum": 0,
+    "contrast": 0,
+    "brightness_mul": 1.0,
+    "brightness_add": 0.0,
+    "red_mul": 1.0,
+    "green_mul": 1.0,
+    "blue_mul": 1.0,
+    "noise_strength": 0.0,
+    "smile_size_ratio": 0.06,
+    "smile_count": 4,
+    "smile_alpha": 210,
+    "audio_speed": 1.10,
+    "audio_pitch_rate": 44100,
+    "audio_volume_boost": 1.0,
+}
