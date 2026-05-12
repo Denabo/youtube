@@ -180,7 +180,28 @@ class VideoProcessor:
             if bottom_bg.h < bottom_height:
                 bottom_bg = bottom_bg.resize(height=bottom_height)
             bottom_bg = bottom_bg.crop(x_center=bottom_bg.w / 2, y_center=bottom_bg.h / 2, width=self.frame_w, height=bottom_height)
-            bottom_bg = bottom_bg.set_position(("center", self.frame_h - bottom_height))
+            bottom_w = int(self.frame_w * 0.92)
+            bottom_h = int(bottom_height * 0.92)
+            bottom_bg = bottom_bg.resize(width=bottom_w)
+            if bottom_bg.h < bottom_h:
+                bottom_bg = bottom_bg.resize(height=bottom_h)
+            bottom_bg = bottom_bg.crop(x_center=bottom_bg.w / 2, y_center=bottom_bg.h / 2, width=bottom_w, height=bottom_h)
+
+            bottom_radius = int(bottom_h * 0.16)
+            bottom_mask = ImageClip(self._rounded_rect_mask(bottom_w, bottom_h, bottom_radius), ismask=True).set_duration(clip.duration)
+            bottom_bg = bottom_bg.set_mask(bottom_mask)
+
+            bottom_border = ColorClip(size=(bottom_w + 20, bottom_h + 20), color=(255, 255, 255), duration=clip.duration)
+            bottom_border_mask = ImageClip(
+                self._rounded_rect_mask(bottom_w + 20, bottom_h + 20, bottom_radius + 10),
+                ismask=True,
+            ).set_duration(clip.duration)
+
+            bottom_y = self.frame_h - bottom_h - 22
+            bottom_border = bottom_border.set_mask(bottom_border_mask).set_position(("center", bottom_y - 10))
+            bottom_bg = bottom_bg.set_position(("center", bottom_y))
+
+            layers.append(bottom_border)
             layers.append(bottom_bg)
 
         square_size = int(self.frame_w * 0.74)
