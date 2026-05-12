@@ -139,9 +139,7 @@ class VideoProcessor:
 
     def _mode_center_square_custom(self, clip):
         layers = []
-        top_margin = 24
         bottom_height = int(self.frame_h * 0.24)
-        banner_reserved_height = int(self.frame_h * 0.28)
 
         static_files = []
         search_dirs = [Path(ROOT_PNG_DIR), Path(INPUT_STATIC_BACKGROUNDS_DIR)]
@@ -185,10 +183,8 @@ class VideoProcessor:
             bottom_bg = bottom_bg.set_position(("center", self.frame_h - bottom_height))
             layers.append(bottom_bg)
 
-        available_top = top_margin + banner_reserved_height + 24
-        available_bottom = self.frame_h - bottom_height - 24
-        center_height = max(420, int((available_bottom - available_top) * 0.96))
-        square_size = min(int(self.frame_w * 0.78), int(center_height * 1.15))
+        square_size = int(self.frame_w * 0.74)
+        center_height = int(square_size * 0.88)
         center_clip = clip.fx(vfx.mirror_x).without_audio()
         pre_crop_width = int(center_clip.w * 0.78)
         center_clip = center_clip.crop(
@@ -216,10 +212,9 @@ class VideoProcessor:
             self._rounded_rect_mask(square_size + 26, center_height + 26, radius + 12),
             ismask=True,
         ).set_duration(clip.duration)
-        video_y = min(available_top, self.frame_h - bottom_height - center_height - 30)
-        border = border.set_mask(border_mask).set_position(("center", video_y - 13))
+        border = border.set_mask(border_mask).set_position(("center", "center"))
 
-        center_clip = center_clip.set_position(("center", video_y))
+        center_clip = center_clip.set_position(("center", "center"))
         layers.append(border)
         layers.append(center_clip)
 
@@ -229,7 +224,7 @@ class VideoProcessor:
                 banner = VideoFileClip(str(banner_files[0])).without_audio()
                 banner = banner.loop(duration=clip.duration) if banner.duration < clip.duration else banner.subclip(0, clip.duration)
                 banner = chroma_key(banner).set_duration(clip.duration)
-                banner = banner.set_position(("center", top_margin))
+                banner = banner.set_position(("center", BANNER_VERTICAL_POSITION))
                 layers.append(banner)
 
         composed = CompositeVideoClip(layers, size=(self.frame_w, self.frame_h))
