@@ -143,10 +143,19 @@ class VideoProcessor:
         bottom_height = int(self.frame_h * 0.24)
         banner_reserved_height = int(self.frame_h * 0.28)
 
-        static_files = [
-            p for p in Path(INPUT_STATIC_BACKGROUNDS_DIR).iterdir()
-            if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}
-        ]
+        static_files = []
+        search_dirs = [Path(ROOT_PNG_DIR), Path(INPUT_STATIC_BACKGROUNDS_DIR)]
+        for search_dir in search_dirs:
+            if not search_dir.exists():
+                continue
+            files = [
+                p for p in search_dir.iterdir()
+                if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}
+            ]
+            if files:
+                static_files = files
+                print(f"   🖼️  Статичный фон: {files[0].name} (из {search_dir})")
+                break
         if static_files:
             static_bg = ImageClip(str(static_files[0])).set_duration(clip.duration)
             static_bg = static_bg.resize(height=self.frame_h)
@@ -160,7 +169,7 @@ class VideoProcessor:
             )
             layers.append(static_bg)
         else:
-            print(f"   ⚠️  Статичный PNG/JPG фон не найден в: {INPUT_STATIC_BACKGROUNDS_DIR}")
+            print(f"   ⚠️  Статичный PNG/JPG фон не найден в: {ROOT_PNG_DIR} и {INPUT_STATIC_BACKGROUNDS_DIR}")
 
         bg_files = list(Path(INPUT_BACKGROUNDS_DIR).glob("*.mp4"))
         if bg_files:

@@ -12,6 +12,7 @@ INPUT_CLIPS_DIR = str(BASE_DIR / "input" / "clips")
 INPUT_MUSIC_DIR = str(BASE_DIR / "input" / "music")
 INPUT_BACKGROUNDS_DIR = str(BASE_DIR / "input" / "backgrounds")
 INPUT_STATIC_BACKGROUNDS_DIR = str(BASE_DIR / "input" / "static_backgrounds")
+ROOT_PNG_DIR = str(BASE_DIR / "png")
 INPUT_BANNERS_DIR = str(BASE_DIR / "input" / "banners")
 INPUT_FONTS_DIR = str(BASE_DIR / "input" / "fonts")
 
@@ -26,6 +27,7 @@ for directory in [
     INPUT_MUSIC_DIR,
     INPUT_BACKGROUNDS_DIR,
     INPUT_STATIC_BACKGROUNDS_DIR,
+    ROOT_PNG_DIR,
     INPUT_BANNERS_DIR,
     INPUT_FONTS_DIR,
     OUTPUT_DIR,
